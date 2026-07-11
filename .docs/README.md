@@ -7,7 +7,7 @@ Welcome to the extended documentation for `cellmodels`. Here you will find deep 
 | Document | Description |
 |----------|-------------|
 | 🔬 [Architecture & Algorithms](architecture.md) | U-Net network topology, loss functions, tiled inference, and post-processing pipeline. |
-| 📊 [Dataset & Split Logic](dataset_guide.md) | MSU-Smooth-1-20 dataset details and group-aware train/val/test splitting to prevent data leakage. |
+| 📊 [Dataset & Split Logic](dataset_guide.md) | [MSU-Smooth-1-20](https://www.kaggle.com/datasets/maximsolopov/msu-smooth-1-20) dataset details and group-aware train/val/test splitting to prevent data leakage. |
 | 🎛️ [Post-Processing Calibration](calibration_guide.md) | Parameter grid search and confluency bias penalization logic. |
 
 ---

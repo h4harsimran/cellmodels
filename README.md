@@ -17,7 +17,7 @@ The library features pre-trained weights and calibrated post-processing configur
 
 | Magnification | Target Modality | Dataset Source | Dice Coefficient | Confluency MAE | Status |
 |:---:|:---|:---|:---:|:---:|:---:|
-| **40x** | Phase-contrast | MSU-Smooth-1-20 | **0.86** | **1.38%** | ✅ Shipped |
+| **40x** | Phase-contrast | [MSU-Smooth-1-20](https://www.kaggle.com/datasets/maximsolopov/msu-smooth-1-20) | **0.86** | **1.38%** | ✅ Shipped |
 | **20x** | Phase-contrast | — | — | — | 🔜 Planned |
 | **10x** | Brightfield / Phase | — | — | — | 🔜 Planned |
 | **4x** | Brightfield | — | — | — | 🔜 Planned |
