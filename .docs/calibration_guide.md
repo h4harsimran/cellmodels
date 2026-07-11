@@ -19,7 +19,7 @@ To resolve this, `cellmodels` uses a grid search on validation data that optimiz
 The post-processing pipeline uses three parameters:
 
 1. **Threshold Factor (`t_factor`)**: A multiplier applied to the Otsu threshold value calculated from the density map. It scales the segmentation threshold dynamically based on image contrast:
-   $$\text{Threshold} = \text{Otsu Threshold} \times \text{t\_factor}$$
+   $$\text{Threshold} = \text{Otsu Threshold} \times t_{\text{factor}}$$
 2. **Closing Disk Radius (`closing_radius`)**: The radius of a disk-shaped structural element used in a binary morphological closing operation. Closing fills small dark holes and gaps inside cell bodies.
 3. **Minimum Object Size (`min_object_size`)**: Connected components in the binary mask with an area smaller than this threshold (in pixels) are discarded, removing high-frequency background noise.
 
