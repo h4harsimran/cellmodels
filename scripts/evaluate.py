@@ -23,6 +23,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
+from scipy.ndimage import binary_dilation
+from skimage.morphology import disk
 
 # Import the exact production routines from predict.py
 from predict import (
@@ -239,6 +241,123 @@ def save_correlation_plot(results, metrics, output_dir):
     print(f"Saved correlation scatter plot to: {plot_path}")
 
 
+def save_visual_examples(test_pairs, model, in_channels, config, device, output_dir):
+    """Save side-by-side overlays of predictions vs ground truth for representative cases."""
+    print("Generating representative visual overlays (low, med, high confluency)...")
+
+    # First pass: compute GT confluency for every test image so we can
+    # pick truly representative low / median / high examples from the
+    # full test set.
+    pair_confs = []
+    for img_path, mask_path in test_pairs:
+        gt_mask = plt.imread(str(mask_path))
+        if gt_mask.ndim == 3:
+            gt_mask = gt_mask.mean(axis=-1)
+        gt_mask = gt_mask > 0.5
+        gt_conf = (gt_mask.sum() / gt_mask.size) * 100
+        pair_confs.append((img_path, mask_path, gt_conf))
+
+    # Sort by GT confluency and pick low / median / high
+    pair_confs.sort(key=lambda x: x[2])
+    pick_indices = [
+        0,
+        len(pair_confs) // 2,
+        len(pair_confs) - 1,
+    ]
+    selected_pairs = [pair_confs[i] for i in pick_indices]
+
+    # Second pass: run the model only on the 3 selected images
+    evaluated_examples = []
+    for img_path, mask_path, gt_conf in selected_pairs:
+        raw_image = plt.imread(str(img_path))
+        if raw_image.ndim == 3:
+            raw_image = raw_image.mean(axis=-1)
+
+        gt_mask = plt.imread(str(mask_path))
+        if gt_mask.ndim == 3:
+            gt_mask = gt_mask.mean(axis=-1)
+        gt_mask = gt_mask > 0.5
+
+        image = preprocess_image(raw_image)
+        density_map = get_density_map(model, image, in_channels, device)
+        pred_mask = segment_density(density_map, config)
+        pred_conf = (pred_mask.sum() / pred_mask.size) * 100
+
+        evaluated_examples.append(
+            {
+                "img_path": img_path,
+                "raw_image": raw_image,
+                "gt_mask": gt_mask,
+                "gt_conf": gt_conf,
+                "pred_mask": pred_mask,
+                "pred_conf": pred_conf,
+            }
+        )
+
+    fig, axes = plt.subplots(3, 3, figsize=(15, 15))
+
+    labels = ["Low Confluency", "Medium Confluency", "High Confluency"]
+    for idx, ex in enumerate(evaluated_examples):
+        # Original Image
+        axes[idx, 0].imshow(ex["raw_image"], cmap="gray")
+        axes[idx, 0].set_title(
+            f"{labels[idx]} (Raw Image)", fontsize=12, fontweight="bold"
+        )
+        axes[idx, 0].axis("off")
+
+        # Ground Truth Mask overlay (green tint + red boundary)
+        gt_overlay = np.stack([ex["raw_image"]] * 3, axis=-1)
+        if gt_overlay.max() > 1.0:
+            gt_overlay = gt_overlay / gt_overlay.max()
+        gt_overlay[ex["gt_mask"], 1] = np.clip(
+            gt_overlay[ex["gt_mask"], 1] + 0.3, 0, 1
+        )
+        border_gt = binary_dilation(ex["gt_mask"], structure=disk(1)) & ~ex["gt_mask"]
+        gt_overlay[border_gt, 0] = 1.0
+        gt_overlay[border_gt, 1] = 0.2
+        gt_overlay[border_gt, 2] = 0.2
+
+        axes[idx, 1].imshow(gt_overlay)
+        axes[idx, 1].set_title(
+            f"Ground Truth: {ex['gt_conf']:.1f}%",
+            fontsize=12,
+            fontweight="bold",
+        )
+        axes[idx, 1].axis("off")
+
+        # Prediction Mask overlay (red/orange tint + red boundary)
+        pred_overlay = np.stack([ex["raw_image"]] * 3, axis=-1)
+        if pred_overlay.max() > 1.0:
+            pred_overlay = pred_overlay / pred_overlay.max()
+        pred_overlay[ex["pred_mask"], 0] = np.clip(
+            pred_overlay[ex["pred_mask"], 0] + 0.3, 0, 1
+        )
+        border_pred = binary_dilation(ex["pred_mask"], structure=disk(1)) & ~ex["pred_mask"]
+        pred_overlay[border_pred, 0] = 1.0
+        pred_overlay[border_pred, 1] = 0.2
+        pred_overlay[border_pred, 2] = 0.2
+
+        axes[idx, 2].imshow(pred_overlay)
+        axes[idx, 2].set_title(
+            f"MSCConfluency: {ex['pred_conf']:.1f}%",
+            fontsize=12,
+            fontweight="bold",
+        )
+        axes[idx, 2].axis("off")
+
+    fig.suptitle(
+        "MSC Segmentation: Ground Truth vs. MSCConfluency",
+        fontsize=16,
+        fontweight="bold",
+    )
+    plt.tight_layout()
+
+    example_plot_path = os.path.join(output_dir, "evaluation_examples.png")
+    plt.savefig(example_plot_path, dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"Saved visual overlay examples to: {example_plot_path}")
+
+
 def main():
     args = parse_args()
 
@@ -373,6 +492,11 @@ def main():
 
     # Correlation scatter plot
     save_correlation_plot(per_image_results, agg, args.output_dir)
+
+    # Save representative side-by-side overlays
+    save_visual_examples(
+        test_pairs, model, in_channels, config, device, args.output_dir
+    )
 
     print("\nEvaluation complete.")
 
