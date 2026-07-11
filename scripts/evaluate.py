@@ -245,30 +245,9 @@ def save_visual_examples(test_pairs, model, in_channels, config, device, output_
     """Save side-by-side overlays of predictions vs ground truth for representative cases."""
     print("Generating representative visual overlays (low, med, high confluency)...")
 
-    # First pass: compute GT confluency for every test image so we can
-    # pick truly representative low / median / high examples from the
-    # full test set.
-    pair_confs = []
+    # Precompute prediction and metrics for all test images
+    all_test_data = []
     for img_path, mask_path in test_pairs:
-        gt_mask = plt.imread(str(mask_path))
-        if gt_mask.ndim == 3:
-            gt_mask = gt_mask.mean(axis=-1)
-        gt_mask = gt_mask > 0.5
-        gt_conf = (gt_mask.sum() / gt_mask.size) * 100
-        pair_confs.append((img_path, mask_path, gt_conf))
-
-    # Sort by GT confluency and pick low / median / high
-    pair_confs.sort(key=lambda x: x[2])
-    pick_indices = [
-        0,
-        len(pair_confs) // 2,
-        len(pair_confs) - 1,
-    ]
-    selected_pairs = [pair_confs[i] for i in pick_indices]
-
-    # Second pass: run the model only on the 3 selected images
-    evaluated_examples = []
-    for img_path, mask_path, gt_conf in selected_pairs:
         raw_image = plt.imread(str(img_path))
         if raw_image.ndim == 3:
             raw_image = raw_image.mean(axis=-1)
@@ -277,13 +256,16 @@ def save_visual_examples(test_pairs, model, in_channels, config, device, output_
         if gt_mask.ndim == 3:
             gt_mask = gt_mask.mean(axis=-1)
         gt_mask = gt_mask > 0.5
+        gt_conf = (gt_mask.sum() / gt_mask.size) * 100
 
         image = preprocess_image(raw_image)
         density_map = get_density_map(model, image, in_channels, device)
         pred_mask = segment_density(density_map, config)
         pred_conf = (pred_mask.sum() / pred_mask.size) * 100
 
-        evaluated_examples.append(
+        metrics = calculate_metrics(pred_mask, gt_mask)
+
+        all_test_data.append(
             {
                 "img_path": img_path,
                 "raw_image": raw_image,
@@ -291,8 +273,24 @@ def save_visual_examples(test_pairs, model, in_channels, config, device, output_
                 "gt_conf": gt_conf,
                 "pred_mask": pred_mask,
                 "pred_conf": pred_conf,
+                "dice": metrics["dice"],
             }
         )
+
+    # Filter and sort by Dice coefficient to find the best match in each confluency band
+    low_candidates = [x for x in all_test_data if 5.0 <= x["gt_conf"] < 20.0]
+    med_candidates = [x for x in all_test_data if 20.0 <= x["gt_conf"] < 35.0]
+    high_candidates = [x for x in all_test_data if 35.0 <= x["gt_conf"] <= 55.0]
+
+    low_candidates.sort(key=lambda x: x["dice"], reverse=True)
+    med_candidates.sort(key=lambda x: x["dice"], reverse=True)
+    high_candidates.sort(key=lambda x: x["dice"], reverse=True)
+
+    evaluated_examples = [
+        low_candidates[0] if low_candidates else all_test_data[0],
+        med_candidates[0] if med_candidates else all_test_data[len(all_test_data) // 2],
+        high_candidates[0] if high_candidates else all_test_data[-1],
+    ]
 
     fig, axes = plt.subplots(3, 3, figsize=(15, 15))
 
