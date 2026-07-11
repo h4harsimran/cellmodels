@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+myenv/
+.venv/
+venv/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+
+
+
+# Dataset (large files, managed separately)
+counting-cells-dataset/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Agents
+.agents/

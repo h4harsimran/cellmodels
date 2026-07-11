@@ -1,0 +1,504 @@
+{
+    "config_used": {
+        "method": "otsu_scaled",
+        "closing_radius": 3,
+        "min_object_size": 200,
+        "calibration_score": 0.9076109506586194,
+        "calibration_mean_dice": 0.9081195506586194,
+        "calibration_mean_bias": 0.05086000000000001,
+        "t_factor": 1.0
+    },
+    "num_test_images": 48,
+    "aggregate_metrics": {
+        "mean_dice": 0.8578599511916568,
+        "mean_jaccard": 0.7571876186917544,
+        "mean_precision": 0.8928238219839288,
+        "mean_recall": 0.8333816521648827,
+        "confluency_mae": 1.8831249999999997,
+        "confluency_rmse": 2.7773679836612697,
+        "confluency_pearson_r": 0.9812194755155106,
+        "confluency_r2": 0.9446471111535106
+    },
+    "per_image_results": [
+        {
+            "dice": 0.8139964272097536,
+            "jaccard": 0.6863355607729817,
+            "precision": 0.8074210052181598,
+            "recall": 0.8206798255085734,
+            "filename": "218-4_part_1_tile_1.png",
+            "gt_confluency": 11.58,
+            "pred_confluency": 11.77,
+            "confluency_error": 0.19
+        },
+        {
+            "dice": 0.7955712430339623,
+            "jaccard": 0.6605382331106162,
+            "precision": 0.889122614170081,
+            "recall": 0.7198322067562265,
+            "filename": "218-4_part_1_tile_10.png",
+            "gt_confluency": 24.72,
+            "pred_confluency": 20.01,
+            "confluency_error": -4.71
+        },
+        {
+            "dice": 0.7562734380744626,
+            "jaccard": 0.6080705045839015,
+            "precision": 0.934292600801812,
+            "recall": 0.6352361815666381,
+            "filename": "218-4_part_1_tile_11.png",
+            "gt_confluency": 24.29,
+            "pred_confluency": 16.51,
+            "confluency_error": -7.77
+        },
+        {
+            "dice": 0.7432566930716074,
+            "jaccard": 0.5914148808066474,
+            "precision": 0.899791707843644,
+            "recall": 0.6331149207028429,
+            "filename": "218-4_part_1_tile_12.png",
+            "gt_confluency": 18.7,
+            "pred_confluency": 13.15,
+            "confluency_error": -5.54
+        },
+        {
+            "dice": 0.7930138099106417,
+            "jaccard": 0.6570197873199624,
+            "precision": 0.853982853857882,
+            "recall": 0.7401702736075908,
+            "filename": "218-4_part_1_tile_13.png",
+            "gt_confluency": 9.23,
+            "pred_confluency": 8.0,
+            "confluency_error": -1.23
+        },
+        {
+            "dice": 0.797807895337748,
+            "jaccard": 0.6636276284328841,
+            "precision": 0.9137846153846154,
+            "recall": 0.7079548976137691,
+            "filename": "218-4_part_1_tile_14.png",
+            "gt_confluency": 12.58,
+            "pred_confluency": 9.75,
+            "confluency_error": -2.83
+        },
+        {
+            "dice": 0.7172422901670739,
+            "jaccard": 0.5591408920555166,
+            "precision": 0.9442058593410415,
+            "recall": 0.5782462865356972,
+            "filename": "218-4_part_1_tile_15.png",
+            "gt_confluency": 18.78,
+            "pred_confluency": 11.5,
+            "confluency_error": -7.28
+        },
+        {
+            "dice": 0.7564436780443272,
+            "jaccard": 0.6082906456980652,
+            "precision": 0.8715530389355398,
+            "recall": 0.6681928757991318,
+            "filename": "218-4_part_1_tile_16.png",
+            "gt_confluency": 22.32,
+            "pred_confluency": 17.11,
+            "confluency_error": -5.21
+        },
+        {
+            "dice": 0.8021359877647303,
+            "jaccard": 0.6696386063622592,
+            "precision": 0.8913084179448405,
+            "recall": 0.7291836037373487,
+            "filename": "218-4_part_1_tile_2.png",
+            "gt_confluency": 16.97,
+            "pred_confluency": 13.89,
+            "confluency_error": -3.09
+        },
+        {
+            "dice": 0.802656416454332,
+            "jaccard": 0.6703643193856208,
+            "precision": 0.9061051684002503,
+            "recall": 0.7204084029008684,
+            "filename": "218-4_part_1_tile_3.png",
+            "gt_confluency": 17.88,
+            "pred_confluency": 14.22,
+            "confluency_error": -3.67
+        },
+        {
+            "dice": 0.7715964156156843,
+            "jaccard": 0.6281294074881861,
+            "precision": 0.8526315373957392,
+            "recall": 0.7046277508465398,
+            "filename": "218-4_part_1_tile_4.png",
+            "gt_confluency": 30.65,
+            "pred_confluency": 25.33,
+            "confluency_error": -5.32
+        },
+        {
+            "dice": 0.8436900380309686,
+            "jaccard": 0.7296400323268724,
+            "precision": 0.8805612183715074,
+            "recall": 0.8097825287829552,
+            "filename": "218-4_part_1_tile_5.png",
+            "gt_confluency": 13.6,
+            "pred_confluency": 12.51,
+            "confluency_error": -1.09
+        },
+        {
+            "dice": 0.8063980976540451,
+            "jaccard": 0.6756005466052935,
+            "precision": 0.8520651823900512,
+            "recall": 0.7653771255835934,
+            "filename": "218-4_part_1_tile_6.png",
+            "gt_confluency": 24.55,
+            "pred_confluency": 22.05,
+            "confluency_error": -2.5
+        },
+        {
+            "dice": 0.7812348965973359,
+            "jaccard": 0.6410053048091139,
+            "precision": 0.9038883193454557,
+            "recall": 0.6878912651513172,
+            "filename": "218-4_part_1_tile_7.png",
+            "gt_confluency": 26.79,
+            "pred_confluency": 20.39,
+            "confluency_error": -6.4
+        },
+        {
+            "dice": 0.7694883244149673,
+            "jaccard": 0.6253401245048105,
+            "precision": 0.8670340983277256,
+            "recall": 0.6916717160841892,
+            "filename": "218-4_part_1_tile_8.png",
+            "gt_confluency": 19.97,
+            "pred_confluency": 15.93,
+            "confluency_error": -4.04
+        },
+        {
+            "dice": 0.7770672205086874,
+            "jaccard": 0.635412864500953,
+            "precision": 0.8150274734206847,
+            "recall": 0.7424856347372786,
+            "filename": "218-4_part_1_tile_9.png",
+            "gt_confluency": 16.88,
+            "pred_confluency": 15.38,
+            "confluency_error": -1.5
+        },
+        {
+            "dice": 0.9208165031136774,
+            "jaccard": 0.8532529507451065,
+            "precision": 0.9115752713855074,
+            "recall": 0.930247022533767,
+            "filename": "218-5_part_4_tile_1.png",
+            "gt_confluency": 11.9,
+            "pred_confluency": 12.14,
+            "confluency_error": 0.24
+        },
+        {
+            "dice": 0.875339551077733,
+            "jaccard": 0.7783145143198983,
+            "precision": 0.8749348531463829,
+            "recall": 0.8757446235654427,
+            "filename": "218-5_part_4_tile_10.png",
+            "gt_confluency": 5.94,
+            "pred_confluency": 5.95,
+            "confluency_error": 0.01
+        },
+        {
+            "dice": 0.90389850576004,
+            "jaccard": 0.8246485480679013,
+            "precision": 0.8914562841995807,
+            "recall": 0.9166929603141214,
+            "filename": "218-5_part_4_tile_11.png",
+            "gt_confluency": 11.41,
+            "pred_confluency": 11.73,
+            "confluency_error": 0.32
+        },
+        {
+            "dice": 0.8937049517218453,
+            "jaccard": 0.8078359865325384,
+            "precision": 0.8899396620472773,
+            "recall": 0.8975022382737219,
+            "filename": "218-5_part_4_tile_12.png",
+            "gt_confluency": 13.18,
+            "pred_confluency": 13.29,
+            "confluency_error": 0.11
+        },
+        {
+            "dice": 0.7561492758726615,
+            "jaccard": 0.6079099856642051,
+            "precision": 0.610838750287492,
+            "recall": 0.9921745969327566,
+            "filename": "218-5_part_4_tile_13.png",
+            "gt_confluency": 5.09,
+            "pred_confluency": 8.26,
+            "confluency_error": 3.18
+        },
+        {
+            "dice": 0.8828570929846916,
+            "jaccard": 0.79028125,
+            "precision": 0.8682620339215821,
+            "recall": 0.8979512125838867,
+            "filename": "218-5_part_4_tile_14.png",
+            "gt_confluency": 5.63,
+            "pred_confluency": 5.83,
+            "confluency_error": 0.19
+        },
+        {
+            "dice": 0.9007151304458255,
+            "jaccard": 0.8193646209386282,
+            "precision": 0.9082338252713129,
+            "recall": 0.893319898609821,
+            "filename": "218-5_part_4_tile_15.png",
+            "gt_confluency": 6.35,
+            "pred_confluency": 6.25,
+            "confluency_error": -0.1
+        },
+        {
+            "dice": 0.8890082449941107,
+            "jaccard": 0.8001933776631837,
+            "precision": 0.8609154286965727,
+            "recall": 0.9189963180144552,
+            "filename": "218-5_part_4_tile_16.png",
+            "gt_confluency": 5.13,
+            "pred_confluency": 5.48,
+            "confluency_error": 0.35
+        },
+        {
+            "dice": 0.9071538432681847,
+            "jaccard": 0.8300837566936702,
+            "precision": 0.9284422299199699,
+            "recall": 0.8868198228299934,
+            "filename": "218-5_part_4_tile_2.png",
+            "gt_confluency": 24.54,
+            "pred_confluency": 23.44,
+            "confluency_error": -1.1
+        },
+        {
+            "dice": 0.7331773167797125,
+            "jaccard": 0.5787529119039468,
+            "precision": 0.8012009547532495,
+            "recall": 0.6758004445831058,
+            "filename": "218-5_part_4_tile_3.png",
+            "gt_confluency": 20.51,
+            "pred_confluency": 17.3,
+            "confluency_error": -3.21
+        },
+        {
+            "dice": 0.7908899672245899,
+            "jaccard": 0.6541091759938248,
+            "precision": 0.8127578106559864,
+            "recall": 0.7701680329178368,
+            "filename": "218-5_part_4_tile_4.png",
+            "gt_confluency": 28.17,
+            "pred_confluency": 26.69,
+            "confluency_error": -1.48
+        },
+        {
+            "dice": 0.90797444470191,
+            "jaccard": 0.8314589711722089,
+            "precision": 0.9411865628109666,
+            "recall": 0.8770263788968825,
+            "filename": "218-5_part_4_tile_5.png",
+            "gt_confluency": 12.51,
+            "pred_confluency": 11.66,
+            "confluency_error": -0.85
+        },
+        {
+            "dice": 0.9036635443785395,
+            "jaccard": 0.8242574984577119,
+            "precision": 0.9162743358496933,
+            "recall": 0.8913951678236144,
+            "filename": "218-5_part_4_tile_6.png",
+            "gt_confluency": 18.89,
+            "pred_confluency": 18.37,
+            "confluency_error": -0.51
+        },
+        {
+            "dice": 0.9023694282403124,
+            "jaccard": 0.8221066827554389,
+            "precision": 0.9187825983486808,
+            "recall": 0.8865323774047048,
+            "filename": "218-5_part_4_tile_7.png",
+            "gt_confluency": 15.68,
+            "pred_confluency": 15.13,
+            "confluency_error": -0.55
+        },
+        {
+            "dice": 0.9068025223801096,
+            "jaccard": 0.8294956226521856,
+            "precision": 0.9200181301535834,
+            "recall": 0.89396120945202,
+            "filename": "218-5_part_4_tile_8.png",
+            "gt_confluency": 11.81,
+            "pred_confluency": 11.47,
+            "confluency_error": -0.33
+        },
+        {
+            "dice": 0.8548824833702883,
+            "jaccard": 0.746545634797695,
+            "precision": 0.8594254328869233,
+            "recall": 0.850387309653627,
+            "filename": "218-5_part_4_tile_9.png",
+            "gt_confluency": 5.67,
+            "pred_confluency": 5.61,
+            "confluency_error": -0.06
+        },
+        {
+            "dice": 0.8665479464504026,
+            "jaccard": 0.7645210432471852,
+            "precision": 0.9225559441042723,
+            "recall": 0.8169511717475031,
+            "filename": "218-6_part_1_tile_1.png",
+            "gt_confluency": 24.51,
+            "pred_confluency": 21.7,
+            "confluency_error": -2.81
+        },
+        {
+            "dice": 0.9273552639451169,
+            "jaccard": 0.8645502399572377,
+            "precision": 0.9276882793017457,
+            "recall": 0.9270224875899603,
+            "filename": "218-6_part_1_tile_10.png",
+            "gt_confluency": 40.13,
+            "pred_confluency": 40.1,
+            "confluency_error": -0.03
+        },
+        {
+            "dice": 0.93446608930451,
+            "jaccard": 0.8769932893966462,
+            "precision": 0.9311148372947057,
+            "recall": 0.9378415519865402,
+            "filename": "218-6_part_1_tile_11.png",
+            "gt_confluency": 31.14,
+            "pred_confluency": 31.37,
+            "confluency_error": 0.22
+        },
+        {
+            "dice": 0.9257516688397621,
+            "jaccard": 0.8617669136519929,
+            "precision": 0.9332294641706018,
+            "recall": 0.9183927573007613,
+            "filename": "218-6_part_1_tile_12.png",
+            "gt_confluency": 46.5,
+            "pred_confluency": 45.76,
+            "confluency_error": -0.74
+        },
+        {
+            "dice": 0.9448256250824096,
+            "jaccard": 0.895421313805314,
+            "precision": 0.9367760511335893,
+            "recall": 0.9530147355736874,
+            "filename": "218-6_part_1_tile_13.png",
+            "gt_confluency": 31.2,
+            "pred_confluency": 31.74,
+            "confluency_error": 0.54
+        },
+        {
+            "dice": 0.9183656171966176,
+            "jaccard": 0.8490536467751658,
+            "precision": 0.9093667525733262,
+            "recall": 0.927544362878734,
+            "filename": "218-6_part_1_tile_14.png",
+            "gt_confluency": 37.97,
+            "pred_confluency": 38.72,
+            "confluency_error": 0.76
+        },
+        {
+            "dice": 0.9229650328746759,
+            "jaccard": 0.8569499236762286,
+            "precision": 0.9351839582460079,
+            "recall": 0.9110612894387422,
+            "filename": "218-6_part_1_tile_15.png",
+            "gt_confluency": 37.96,
+            "pred_confluency": 36.98,
+            "confluency_error": -0.98
+        },
+        {
+            "dice": 0.9159312894583949,
+            "jaccard": 0.844901509057292,
+            "precision": 0.911732089860882,
+            "recall": 0.9201693488646241,
+            "filename": "218-6_part_1_tile_16.png",
+            "gt_confluency": 43.6,
+            "pred_confluency": 44.01,
+            "confluency_error": 0.4
+        },
+        {
+            "dice": 0.8987644714653048,
+            "jaccard": 0.8161419134934753,
+            "precision": 0.9228336887353502,
+            "recall": 0.8759188795877224,
+            "filename": "218-6_part_1_tile_2.png",
+            "gt_confluency": 37.45,
+            "pred_confluency": 35.55,
+            "confluency_error": -1.9
+        },
+        {
+            "dice": 0.9124912917427767,
+            "jaccard": 0.8390657332805002,
+            "precision": 0.9270729708102166,
+            "recall": 0.8983612121326398,
+            "filename": "218-6_part_1_tile_3.png",
+            "gt_confluency": 42.43,
+            "pred_confluency": 41.11,
+            "confluency_error": -1.31
+        },
+        {
+            "dice": 0.9153724276854193,
+            "jaccard": 0.8439509109398969,
+            "precision": 0.902480907823031,
+            "recall": 0.9286375834895387,
+            "filename": "218-6_part_1_tile_4.png",
+            "gt_confluency": 31.64,
+            "pred_confluency": 32.55,
+            "confluency_error": 0.92
+        },
+        {
+            "dice": 0.9276688552150305,
+            "jaccard": 0.865095506855816,
+            "precision": 0.9406750767132629,
+            "recall": 0.915017389121939,
+            "filename": "218-6_part_1_tile_5.png",
+            "gt_confluency": 33.47,
+            "pred_confluency": 32.56,
+            "confluency_error": -0.91
+        },
+        {
+            "dice": 0.9300180189064968,
+            "jaccard": 0.8691903558563057,
+            "precision": 0.9356370972409402,
+            "recall": 0.9244660297283277,
+            "filename": "218-6_part_1_tile_6.png",
+            "gt_confluency": 24.48,
+            "pred_confluency": 24.19,
+            "confluency_error": -0.29
+        },
+        {
+            "dice": 0.9216627811220525,
+            "jaccard": 0.8547073818717664,
+            "precision": 0.9457291455910881,
+            "recall": 0.8987908744387011,
+            "filename": "218-6_part_1_tile_7.png",
+            "gt_confluency": 44.21,
+            "pred_confluency": 42.01,
+            "confluency_error": -2.19
+        },
+        {
+            "dice": 0.9272067006679975,
+            "jaccard": 0.864292032067447,
+            "precision": 0.9354788608674619,
+            "recall": 0.9190795546361219,
+            "filename": "218-6_part_1_tile_8.png",
+            "gt_confluency": 39.98,
+            "pred_confluency": 39.28,
+            "confluency_error": -0.7
+        },
+        {
+            "dice": 0.9306088990379975,
+            "jaccard": 0.8702231561501125,
+            "precision": 0.9409684552783085,
+            "recall": 0.9204749650945109,
+            "filename": "218-6_part_1_tile_9.png",
+            "gt_confluency": 31.94,
+            "pred_confluency": 31.25,
+            "confluency_error": -0.7
+        }
+    ]
+}
