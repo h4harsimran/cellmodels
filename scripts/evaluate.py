@@ -337,14 +337,14 @@ def save_visual_examples(test_pairs, model, in_channels, config, device, output_
 
         axes[idx, 2].imshow(pred_overlay)
         axes[idx, 2].set_title(
-            f"MSCConfluency: {ex['pred_conf']:.1f}%",
+            f"Prediction: {ex['pred_conf']:.1f}%",
             fontsize=12,
             fontweight="bold",
         )
         axes[idx, 2].axis("off")
 
     fig.suptitle(
-        "MSC Segmentation: Ground Truth vs. MSCConfluency",
+        "MSC Segmentation: Ground Truth vs. Prediction",
         fontsize=16,
         fontweight="bold",
     )

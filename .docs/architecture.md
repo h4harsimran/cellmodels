@@ -8,11 +8,11 @@ This document provides a technical deep dive into the network architecture, infe
 
 `cellmodels` employs a **U-Net** encoder-decoder convolutional network to estimate mesenchymal stem cell (MSC) confluency from grayscale micrographs. Rather than predicting a single scalar confluency value directly from the image, the pipeline uses a two-stage approach:
 
-1. **Pixel-Level Prediction**: The U-Net generates a continuous **density map** (probability map of cell presence).
-2. **Post-Processing & Area Estimation**: The density map is converted to a binary cell mask via thresholding and morphology, and confluency is calculated as the ratio of cell pixels to total pixels.
+1. **Pixel-Level Prediction**: The U-Net generates a continuous **probability map** representing cell likelihood at each pixel (referred to in code/API as `density_map` for naming compatibility).
+2. **Post-Processing & Area Estimation**: The probability map is converted to a binary cell mask via thresholding and morphology, and confluency is calculated as the ratio of cell pixels to total pixels.
 
 ```
-Raw Image (2D) ──► Preprocessing ──► Tiled Inference ──► Density Map (2D) ──► Segmentation ──► Confluency %
+Raw Image (2D) ──► Preprocessing ──► Tiled Inference ──► Probability Map (2D) ──► Segmentation ──► Confluency %
 ```
 
 ---
@@ -26,7 +26,7 @@ Input Image (1 × H × W)
      │
      ▼
 ┌───────────┐     ┌───────────┐
-│ Encoder 1 │────►│ Decoder 1 │──► 1×1 Conv ──► Sigmoid ──► Density Map (1 × H × W)
+│ Encoder 1 │────►│ Decoder 1 │──► 1×1 Conv ──► Sigmoid ──► Probability Map (1 × H × W)
 │ (16 feat) │     │ (16 feat) │
 └─────┬─────┘     └─────▲─────┘
       │ pool            │ upconv + concat
@@ -71,7 +71,7 @@ The expanding path restores spatial dimensions, enabling precise pixel-level loc
 Skip connections are crucial: they inject fine-grained spatial details directly into the decoder, helping resolve precise cell borders that are otherwise lost during pooling.
 
 ### 4. Output Layer
-The final layer is a 1×1 convolution followed by a `Sigmoid` activation function. It maps the 16-channel feature map of the final decoder stage to a single-channel density map of shape `(1, H, W)`, representing the probability $P(\text{cell} \mid x, y) \in [0, 1]$ for each pixel.
+The final layer is a 1×1 convolution followed by a `Sigmoid` activation function. It maps the 16-channel feature map of the final decoder stage to a single-channel probability map (referred to in the code as `density_map`) of shape `(1, H, W)`, representing the probability $P(\text{cell} \mid x, y) \in [0, 1]$ for each pixel.
 
 ---
 
@@ -102,14 +102,14 @@ For large micrographs that could exceed GPU or CPU memory limitations, the infer
 
 ## Post-Processing & Segmentation
 
-The `segment()` method converts the raw U-Net probability density map into a binary cell mask through three main steps:
+The `segment()` method converts the raw U-Net probability map into a binary cell mask through three main steps:
 
 1. **Thresholding**: A binary mask is created by applying a threshold.
 2. **Morphological Closing**: A binary closing operation with a disk-shaped footprint is applied to fill small gaps/holes within cell bodies.
 3. **Small Object Removal**: Connected components smaller than a specified pixel size are removed to eliminate noise.
 
 ```
-Density Map ──► Thresholding ──► Morphological Closing ──► Small Object Removal ──► Binary Cell Mask
+Probability Map ──► Thresholding ──► Morphological Closing ──► Small Object Removal ──► Binary Cell Mask
 ```
 
 ### Parameter Loading Precedence
@@ -161,3 +161,15 @@ where $p_i$ is the predicted probability and $y_i$ is the ground-truth binary la
 * **Optimizer**: Adam optimizer with a base learning rate of $\eta_0 = 10^{-4}$.
 * **LR Scheduler**: Cosine Annealing Learning Rate scheduler that decays the learning rate down to $10^{-6}$ over the course of training.
 * **Hardware Optimizations**: Employs pinned memory (`pin_memory=True`) and non-blocking CUDA transfers (`non_blocking=True`) to maximize CPU-to-GPU data pipeline throughput.
+* **Learning Curves Plots**: Saves `loss_curve.png` and `dice_curve.png` to track training progress. The plots are generated with the X-axis starting at Epoch 1 (1-indexed matching console logs).
+
+---
+
+## Visualization Outputs
+
+For human-in-the-loop verification, the scripts generate plots mapping model outputs:
+- **Inference Overlays**: Produced by `predict.py` showing a 3-panel visualization for each processed micrograph:
+  1. **Input Image**: The preprocessed raw input grayscale micrograph (handles phase-contrast or brightfield inputs).
+  2. **U-Net Probability Map**: The continuous probability heatmap from the sigmoid output layer.
+  3. **Prediction Overlay**: The segmented cell mask overlay (green tint + red boundary) with the final confluency percentage.
+- **Evaluation Examples Grid (`evaluation_examples.png`)**: Produced by `evaluate.py`, comparing the **Ground Truth** and model **Prediction** masks side-by-side across representative Low, Medium, and High confluency micrographs.

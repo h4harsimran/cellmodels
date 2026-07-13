@@ -251,10 +251,11 @@ def build_model(encoder_backbone, device):
 
 def plot_learning_curves(train_losses, val_losses, val_dices, output_dir):
     """Save the loss and dice curves plot."""
-    # Loss curves
+    epochs_range = range(1, len(train_losses) + 1)
     plt.figure(figsize=(10, 6))
-    plt.plot(train_losses, label="Train Loss", color="#1f77b4", linewidth=2)
+    plt.plot(epochs_range, train_losses, label="Train Loss", color="#1f77b4", linewidth=2)
     plt.plot(
+        epochs_range,
         val_losses,
         label="Validation Loss",
         color="#ff7f0e",
@@ -275,8 +276,9 @@ def plot_learning_curves(train_losses, val_losses, val_dices, output_dir):
     print(f"Saved loss curves plot to: {plot_path}")
 
     # Dice curves
+    epochs_range_dice = range(1, len(val_dices) + 1)
     plt.figure(figsize=(10, 6))
-    plt.plot(val_dices, label="Validation Dice", color="#2ca02c", linewidth=2)
+    plt.plot(epochs_range_dice, val_dices, label="Validation Dice", color="#2ca02c", linewidth=2)
     plt.xlabel("Epochs", fontsize=12, fontweight="bold")
     plt.ylabel("Dice Coefficient", fontsize=12, fontweight="bold")
     plt.title("U-Net Validation Dice Coefficient", fontsize=14, fontweight="bold")

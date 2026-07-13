@@ -7,7 +7,7 @@
 
 Deep learning toolkit for automated estimation of **mesenchymal stem cell (MSC) confluency** from phase-contrast and brightfield microscopy images.
 
-`cellmodels` implements a production-grade **U-Net** semantic segmentation backbone trained to generate high-fidelity pixel-level cell density maps, coupled with an automated calibration routine to produce accurate, unbiased confluency percentage estimates.
+`cellmodels` implements a production-grade **U-Net** semantic segmentation backbone trained to generate high-fidelity pixel-level cell probability maps, coupled with an automated calibration routine to produce accurate, unbiased confluency percentage estimates.
 
 ---
 
@@ -58,7 +58,7 @@ from cellmodels import MSCConfluency
 model = MSCConfluency(magnification="10x")
 
 # Run prediction on a 2D grayscale image (numpy array)
-# Returns the raw U-Net density map and the estimated confluency percentage (0-100)
+# Returns the raw U-Net probability map (referred to as density_map in code) and the estimated confluency percentage (0-100)
 density_map, confluency_pct = model.predict(image)
 print(f"Estimated MSC Confluency: {confluency_pct:.2f}%")
 
@@ -76,14 +76,14 @@ density_map, confluency_pct = model.predict(
 Estimate confluency directly from the terminal. The CLI supports processing single images or entire directories, and outputs overlay images and a consolidated results CSV:
 
 ```bash
-# Predict confluency for a single phase-contrast micrograph
-python scripts/predict.py path/to/image.png --magnification 10x
+# Predict confluency for a single phase-contrast micrograph using shipped 10x model
+python scripts/predict.py path/to/image.png --checkpoint cellmodels/weights/10x.pt --optimal-config cellmodels/weights/10x.json
 
 # Predict confluency for an entire folder of micrographs, saving to a custom directory
-python scripts/predict.py path/to/images/ --magnification 10x --output-dir output/predictions/
+python scripts/predict.py path/to/images/ --checkpoint cellmodels/weights/10x.pt --optimal-config cellmodels/weights/10x.json --output-dir output/predictions/
 
-# Run inference using a custom model checkpoint
-python scripts/predict.py path/to/images/ --checkpoint path/to/best_model.pt
+# Run inference using a custom model checkpoint and custom calibration config
+python scripts/predict.py path/to/images/ --checkpoint path/to/best_model.pt --optimal-config path/to/optimal_config.json
 ```
 
 ---

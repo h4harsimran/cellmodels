@@ -236,14 +236,14 @@ def create_overlay(image, density_map, cell_mask, confluency_pct, filename):
     """Create a 3-panel visualisation: raw image, density heatmap, overlay."""
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
-    # Panel 1: Raw image
+    # Panel 1: Input image
     axes[0].imshow(image, cmap="gray")
-    axes[0].set_title("Brightfield Image", fontsize=12)
+    axes[0].set_title("Input Image", fontsize=12)
     axes[0].axis("off")
 
-    # Panel 2: Density map (heatmap)
+    # Panel 2: Probability map (heatmap)
     im = axes[1].imshow(density_map, cmap="hot")
-    axes[1].set_title("U-Net Density Map", fontsize=12)
+    axes[1].set_title("U-Net Probability Map", fontsize=12)
     axes[1].axis("off")
     plt.colorbar(im, ax=axes[1], fraction=0.046, pad=0.04)
 

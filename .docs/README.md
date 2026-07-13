@@ -150,14 +150,14 @@ from cellmodels import MSCConfluency
 import matplotlib.pyplot as plt
 
 # 1. Load the model (specifying the target magnification)
-model = MSCConfluency(magnification="20x")
+model = MSCConfluency(magnification="10x")
 
 # 2. Read your image (2D numpy array)
 image = plt.imread("path/to/my_image.png")
 if image.ndim == 3:
     image = image.mean(axis=-1)  # Collapse to grayscale if RGB
 
-# 3. Predict density map & confluency percentage
+# 3. Predict cell probability map & confluency percentage
 density_map, confluency_pct = model.predict(image)
 print(f"Cell Confluency: {confluency_pct:.2f}%")
 
@@ -168,6 +168,9 @@ density_map, confluency_pct = model.predict(
     closing_radius=3, 
     min_object_size=50
 )
+
+# (Optional) Run tiled inference for large images to save memory
+density_map, confluency_pct = model.predict(image, max_size=384)
 ```
 
 ---
@@ -186,24 +189,19 @@ output/confluency/
 
 #### Run on a Single Image:
 ```bash
-python scripts/predict.py path/to/micrograph.png --magnification 20x
+python scripts/predict.py path/to/micrograph.png --checkpoint cellmodels/weights/10x.pt --optimal-config cellmodels/weights/10x.json
 ```
 
 #### Run on a Directory of Images:
 ```bash
-python scripts/predict.py path/to/images_folder/ --magnification 20x --output-dir output/predictions_20x
-```
-
-#### Run on Large Images with Tiled Inference:
-For large micrographs that could exceed GPU/CPU memory constraints, specify `--max-size` (must be a multiple of 16). The pipeline automatically processes non-overlapping tiles and handles edge boundaries cleanly:
-```bash
-python scripts/predict.py path/to/large_image.tif --max-size 384 --magnification 10x
+python scripts/predict.py path/to/images_folder/ --checkpoint cellmodels/weights/10x.pt --optimal-config cellmodels/weights/10x.json --output-dir output/predictions_10x
 ```
 
 #### CLI Parameters:
 * `input`: Path to a single image or directory of images.
-* `--magnification`: Objective magnification (loads default weights/parameters; e.g. `10x`, `20x`).
-* `--checkpoint`: Path to a custom checkpoint to override default shipped weights.
-* `--max-size`: Tile size for tiled inference (e.g., `384` or `512`).
+* `--checkpoint`: Path to the trained model weights `.pt` file (default: `output/training/best_msc_unet.pt`).
+* `--optimal-config`: Path to the calibrated `optimal_config.json` containing segmentation threshold, closing, and noise filtering parameters (default: `output/calibration/optimal_config.json`).
+* `--encoder-backbone`: Backbone encoder architecture matching the checkpoint (`scratch`, `vgg16`, `resnet34`, default: `scratch`).
+* `--device`: Compute device to use (`cpu`, `cuda`, `mps`, default: auto-detect).
 * `--output-dir`: Folder to save results (default: `output/confluency`).
 * `--no-save-images`: Skips generating overlays, only writes to `confluency_results.csv` for maximum speed.
