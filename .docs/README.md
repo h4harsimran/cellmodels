@@ -128,10 +128,10 @@ To integrate the newly calibrated model into the public `cellmodels` package API
    ```
 2. **Register parameters**: Open [confluency.py](../cellmodels/confluency.py) and locate `_CALIBRATED_DEFAULTS` around line 29. Add the new magnification, using the parameters identified in step 3:
    ```python
-   _CALIBRATED_DEFAULTS: Dict[str, Tuple[float, int, int]] = {
-       "40x": (1.2, 1, 200),
-       "20x": (1.2, 1, 200),  # Add your new magnification parameters here: (t_factor, radius, min_size)
-   }
+    _CALIBRATED_DEFAULTS: Dict[str, Tuple[float, int, int]] = {
+        "10x": (1.2, 1, 200),
+        "20x": (1.2, 1, 200),  # Add your new magnification parameters here: (t_factor, radius, min_size)
+    }
    ```
 
 ---
@@ -197,12 +197,12 @@ python scripts/predict.py path/to/images_folder/ --magnification 20x --output-di
 #### Run on Large Images with Tiled Inference:
 For large micrographs that could exceed GPU/CPU memory constraints, specify `--max-size` (must be a multiple of 16). The pipeline automatically processes non-overlapping tiles and handles edge boundaries cleanly:
 ```bash
-python scripts/predict.py path/to/large_image.tif --max-size 384 --magnification 40x
+python scripts/predict.py path/to/large_image.tif --max-size 384 --magnification 10x
 ```
 
 #### CLI Parameters:
 * `input`: Path to a single image or directory of images.
-* `--magnification`: Objective magnification (loads default weights/parameters; e.g. `40x`, `20x`).
+* `--magnification`: Objective magnification (loads default weights/parameters; e.g. `10x`, `20x`).
 * `--checkpoint`: Path to a custom checkpoint to override default shipped weights.
 * `--max-size`: Tile size for tiled inference (e.g., `384` or `512`).
 * `--output-dir`: Folder to save results (default: `output/confluency`).

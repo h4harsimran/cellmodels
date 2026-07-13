@@ -119,16 +119,16 @@ To provide maximum flexibility and reliable defaults, the library implements a s
 ```
 1. Explicit function arguments in predict() or segment()
        ▼ (if None)
-2. Shipped JSON configuration file (e.g., cellmodels/weights/40x.json)
+2. Shipped JSON configuration file (e.g., cellmodels/weights/10x.json)
        ▼ (if JSON missing)
 3. Hardcoded defaults in _CALIBRATED_DEFAULTS (cellmodels/confluency.py)
 ```
 
 ### Current Configured Parameter Values
 
-For the **40x** magnification model, the parameters under each level of precedence are:
+For the **10x** magnification model, the parameters under each level of precedence are:
 
-| Parameter | Shipped JSON (`40x.json`) | Package Fallback (`_CALIBRATED_DEFAULTS`) | Description |
+| Parameter | Shipped JSON (`10x.json`) | Package Fallback (`_CALIBRATED_DEFAULTS`) | Description |
 |:---|:---:|:---:|:---|
 | **Method** | `otsu_scaled` | `otsu_scaled` | Dynamic Otsu vs. absolute cutoff |
 | **Threshold Factor (`t_factor`)** | `1.2` | `0.8` | Multiplier for the Otsu threshold value |

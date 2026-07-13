@@ -1,12 +1,12 @@
 # Dataset & Split Logic Guide
 
-This document describes the dataset used to train the `cellmodels` 40x magnification model and the group-aware partitioning logic designed to prevent spatial data leakage.
+This document describes the dataset used to train the `cellmodels` 10x magnification model and the group-aware partitioning logic designed to prevent spatial data leakage.
 
 ---
 
 ## The MSU-Smooth-1-20 Dataset
 
-The 40x magnification model is trained on the public [MSU-Smooth-1-20 MSC dataset](https://www.kaggle.com/datasets/maximsolopov/msu-smooth-1-20), which consists of:
+The 10x magnification model is trained on the public [MSU-Smooth-1-20 MSC dataset](https://www.kaggle.com/datasets/maximsolopov/msu-smooth-1-20), which consists of:
 * **Micrographs**: Phase-contrast microscopy images of mesenchymal stem cells (MSCs).
 * **Ground-Truth Masks**: Hand-segmented, pixel-level binary masks showing cell locations (foreground) vs. background.
 * **Resolution**: Standard images are high-resolution ($1000 \times 1000$ pixels).

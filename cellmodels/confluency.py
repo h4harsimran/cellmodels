@@ -9,7 +9,7 @@ Usage::
 
     from cellmodels import MSCConfluency
 
-    model = MSCConfluency(magnification="40x")
+    model = MSCConfluency(magnification="10x")
     density_map, confluency_pct = model.predict(image)
 """
 
@@ -28,11 +28,11 @@ from cellmodels.base_model import Base
 # These were determined via grid search on held-out calibration sets.
 # Each entry maps magnification → (threshold_factor, closing_radius, min_object_size)
 _CALIBRATED_DEFAULTS: Dict[str, Tuple[float, int, int]] = {
-    "40x": (0.8, 1, 200),
+    "10x": (0.8, 1, 200),
     # Future magnifications will be added here as models are trained:
     # "4x":  (t_factor, radius, min_size),
-    # "10x": (t_factor, radius, min_size),
     # "20x": (t_factor, radius, min_size),
+    # "40x": (t_factor, radius, min_size),
 }
 
 # Magnifications that have trained weights available
@@ -52,7 +52,7 @@ class MSCConfluency(Base):
     magnification : str
         Objective magnification of the input images. Determines which
         weight file and calibrated segmentation parameters to use.
-        Currently supported: ``"40x"``.
+        Currently supported: ``"10x"``.
     checkpoint : str, optional
         Path to a custom ``.pt`` checkpoint file. If provided, overrides
         the default weights for the given magnification.
@@ -62,7 +62,7 @@ class MSCConfluency(Base):
     Examples
     --------
     >>> from cellmodels import MSCConfluency
-    >>> model = MSCConfluency(magnification="40x")
+    >>> model = MSCConfluency(magnification="10x")
     >>> density_map, confluency_pct = model.predict(image)
     >>> print(f"Confluency: {confluency_pct:.1f}%")
     """
@@ -73,13 +73,13 @@ class MSCConfluency(Base):
 
     def __init__(
         self,
-        magnification: str = "40x",
+        magnification: str = "10x",
         checkpoint: Optional[str] = None,
         device=None,
     ):
         self.magnification = magnification
 
-        # Set model_name to match the weight filename (e.g., "40x" → weights/40x.pt)
+        # Set model_name to match the weight filename (e.g., "10x" → weights/10x.pt)
         self.model_name = magnification
 
         # Locate weights directory and config file

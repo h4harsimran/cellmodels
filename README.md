@@ -17,10 +17,10 @@ The library features pre-trained weights and calibrated post-processing configur
 
 | Magnification | Target Modality | Dataset Source | Dice Coefficient | Confluency MAE | Status |
 |:---:|:---|:---|:---:|:---:|:---:|
-| **40x** | Phase-contrast | [MSU-Smooth-1-20](https://www.kaggle.com/datasets/maximsolopov/msu-smooth-1-20) | **0.86** | **1.38%** | ✅ Shipped |
+| **10x** | Phase-contrast | [MSU-Smooth-1-20](https://www.kaggle.com/datasets/maximsolopov/msu-smooth-1-20) | **0.86** | **1.38%** | ✅ Shipped |
 | **20x** | Phase-contrast | — | — | — | 🔜 Planned |
-| **10x** | Brightfield / Phase | — | — | — | 🔜 Planned |
-| **4x** | Brightfield | — | — | — | 🔜 Planned |
+| **40x** | Phase-contrast | — | — | — | 🔜 Planned |
+
 
 For a deep dive into the network architecture, preprocessing, and segmentation post-processing details, see the [Architecture Deep Dive](.docs/architecture.md).
 
@@ -54,8 +54,8 @@ The `MSCConfluency` class handles preprocessing, U-Net forward inference, and ca
 ```python
 from cellmodels import MSCConfluency
 
-# Initialize the model (defaults to shipped 40x magnification weights)
-model = MSCConfluency(magnification="40x")
+# Initialize the model (defaults to shipped 10x magnification weights)
+model = MSCConfluency(magnification="10x")
 
 # Run prediction on a 2D grayscale image (numpy array)
 # Returns the raw U-Net density map and the estimated confluency percentage (0-100)
@@ -77,10 +77,10 @@ Estimate confluency directly from the terminal. The CLI supports processing sing
 
 ```bash
 # Predict confluency for a single phase-contrast micrograph
-python scripts/predict.py path/to/image.png --magnification 40x
+python scripts/predict.py path/to/image.png --magnification 10x
 
 # Predict confluency for an entire folder of micrographs, saving to a custom directory
-python scripts/predict.py path/to/images/ --magnification 40x --output-dir output/predictions/
+python scripts/predict.py path/to/images/ --magnification 10x --output-dir output/predictions/
 
 # Run inference using a custom model checkpoint
 python scripts/predict.py path/to/images/ --checkpoint path/to/best_model.pt
@@ -154,8 +154,8 @@ cellmodels/
 │   ├── confluency.py        # MSCConfluency wrapper & segmentation
 │   ├── losses.py            # Custom BCE-Dice training loss
 │   └── weights/             # Shipped checkpoints and configs
-│       ├── 40x.pt           # 40x objective model checkpoint
-│       └── 40x.json         # Calibrated post-processing parameters
+│       ├── 10x.pt           # 10x objective model checkpoint
+│       └── 10x.json         # Calibrated post-processing parameters
 ├── scripts/                 # CLI pipelines
 │   ├── split_dataset.py     # Leakage-free dataset splitting
 │   ├── train_unet.py        # Model training loop
