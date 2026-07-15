@@ -203,5 +203,17 @@ python scripts/predict.py path/to/images_folder/ --checkpoint cellmodels/weights
 * `--optimal-config`: Path to the calibrated `optimal_config.json` containing segmentation threshold, closing, and noise filtering parameters (default: `output/calibration/optimal_config.json`).
 * `--encoder-backbone`: Backbone encoder architecture matching the checkpoint (`scratch`, `vgg16`, `resnet34`, default: `scratch`).
 * `--device`: Compute device to use (`cpu`, `cuda`, `mps`, default: auto-detect).
-* `--output-dir`: Folder to save results (default: `output/confluency`).
 * `--no-save-images`: Skips generating overlays, only writes to `confluency_results.csv` for maximum speed.
+
+---
+
+### 3. Interactive Web UI
+For a visual, slider-driven environment to explore parameters or launch runs:
+
+```bash
+python scripts/ui.py --port 8000
+```
+Navigate to `http://localhost:8000` to access:
+* **Prediction Sandbox**: Upload micrographs, select magnification, use custom weights, adjust threshold/closing/noise sliders in real-time, adjust boundary opacity, and view cell heatmaps.
+* **Model Trainer**: Configure training, validation, and test folders, adjust hyperparameters, run the training thread asynchronously, view metrics charts, and stream console output logs.
+

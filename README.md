@@ -86,7 +86,21 @@ python scripts/predict.py path/to/images/ --checkpoint cellmodels/weights/10x.pt
 python scripts/predict.py path/to/images/ --checkpoint path/to/best_model.pt --optimal-config path/to/optimal_config.json
 ```
 
+### Interactive Web UI
+
+Launch a local, interactive web dashboard to analyze confluency in a sandbox or run/monitor training runs in real-time:
+
+```bash
+# Start the web server
+python scripts/ui.py --port 8000
+```
+Open [http://localhost:8000](http://localhost:8000) in your browser.
+
+* **Prediction Sandbox**: Drag-and-drop cell micrographs (PNG, JPG, TIF), upload custom checkpoints, adjust threshold and morphology sliders in real-time, and view base64 overlays (with toggleable opacity) or U-Net heatmaps.
+* **Model Trainer**: Configure train/val/test folders, adjust epochs/backbones, start or stop the training pipeline, stream live terminal logs, and plot validation metrics dynamically.
+
 ---
+
 
 ## 🛠️ Developer & Training Pipelines
 
