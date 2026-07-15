@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize telemetry chart
     initChart();
+
+    // Load initial calibrated parameters for default magnification
+    handleMagnificationChange();
 });
 
 // Tab Switching
@@ -142,6 +145,57 @@ function toggleCheckpointUpload() {
         checkpointGroup.style.display = 'flex';
     } else {
         checkpointGroup.style.display = 'none';
+    }
+}
+
+async function fetchCalibratedParameters(magnification) {
+    try {
+        const response = await fetch(`/api/parameters/${magnification}`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch parameters for ${magnification}`);
+        }
+        const data = await response.json();
+        
+        // Update Threshold Method checkbox
+        const useAbsoluteCheckbox = document.getElementById('use-absolute-threshold');
+        const isAbsolute = (data.method === 'absolute_threshold');
+        useAbsoluteCheckbox.checked = isAbsolute;
+        toggleThresholdMethod(); // updates container displays
+        
+        // Update sliders values and their display labels
+        if (isAbsolute) {
+            if (data.prob_threshold !== undefined) {
+                document.getElementById('prob-threshold').value = data.prob_threshold;
+                updateSliderValue('prob-threshold');
+            }
+        } else {
+            const factor = data.t_factor !== undefined ? data.t_factor : data.threshold_factor;
+            if (factor !== undefined) {
+                document.getElementById('otsu-factor').value = factor;
+                updateSliderValue('otsu-factor');
+            }
+        }
+        
+        if (data.closing_radius !== undefined) {
+            document.getElementById('closing-radius').value = data.closing_radius;
+            updateSliderValue('closing-radius');
+        }
+        
+        if (data.min_object_size !== undefined) {
+            document.getElementById('min-object-size').value = data.min_object_size;
+            updateSliderValue('min-object-size');
+        }
+        
+    } catch (e) {
+        console.error('Error fetching calibrated parameters:', e);
+    }
+}
+
+async function handleMagnificationChange() {
+    toggleCheckpointUpload();
+    const mag = document.getElementById('mag-select').value;
+    if (mag !== 'custom') {
+        await fetchCalibratedParameters(mag);
     }
 }
 

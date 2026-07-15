@@ -63,7 +63,7 @@
 
                         <div class="control-group">
                             <label class="control-label" for="mag-select">2. Model Magnification</label>
-                            <select id="mag-select" class="form-control" onchange="toggleCheckpointUpload()">
+                            <select id="mag-select" class="form-control" onchange="handleMagnificationChange()">
                                 <option value="10x">10x Magnification (Calibrated Default)</option>
                                 <option value="custom">Custom Checkpoint (.pt file)</option>
                             </select>
@@ -93,7 +93,6 @@
                                     <span class="slider-value" id="otsu-factor-val">1.0</span>
                                 </div>
                                 <input type="range" id="otsu-factor" min="0.1" max="2.5" step="0.05" value="1.0" class="slider" oninput="updateSliderValue('otsu-factor')">
-                                <div class="slider-hint">Calibrated default: 0.8 for 10x magnification.</div>
                             </div>
 
                             <!-- Absolute Threshold Slider -->
@@ -113,7 +112,7 @@
                                     <span class="slider-value" id="closing-radius-val">3</span>
                                 </div>
                                 <input type="range" id="closing-radius" min="0" max="10" step="1" value="3" class="slider" oninput="updateSliderValue('closing-radius')">
-                                <div class="slider-hint">Fills small holes inside the cell body. Calibrated default: 1.</div>
+                                <div class="slider-hint">Fills small holes inside the cell body.</div>
                             </div>
 
                             <!-- Min Object Size Slider -->
@@ -123,7 +122,7 @@
                                     <span class="slider-value" id="min-object-size-val">50</span>
                                 </div>
                                 <input type="range" id="min-object-size" min="0" max="1000" step="10" value="50" class="slider" oninput="updateSliderValue('min-object-size')">
-                                <div class="slider-hint">Removes segmented noise smaller than this. Calibrated default: 200.</div>
+                                <div class="slider-hint">Removes segmented noise smaller than this.</div>
                             </div>
                         </div>
 

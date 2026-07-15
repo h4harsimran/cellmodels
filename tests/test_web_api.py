@@ -71,3 +71,24 @@ def test_train_start_invalid_folders():
     )
     assert response.status_code == 400
     assert "directory does not exist" in response.json()["detail"]
+
+def test_get_parameters_endpoint():
+    """Verify parameters endpoint returns optimal calibration settings and fallbacks correctly."""
+    # Test valid magnification with json config
+    response = client.get("/api/parameters/10x")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["method"] == "otsu_scaled"
+    assert data["closing_radius"] == 3
+    assert data["min_object_size"] == 200
+    assert data["t_factor"] == 1.0
+
+    # Test unknown magnification fallback
+    response_fallback = client.get("/api/parameters/unknown_mag")
+    assert response_fallback.status_code == 200
+    data_fallback = response_fallback.json()
+    assert data_fallback["method"] == "otsu_scaled"
+    assert data_fallback["t_factor"] == 1.0
+    assert data_fallback["closing_radius"] == 3
+    assert data_fallback["min_object_size"] == 50
+

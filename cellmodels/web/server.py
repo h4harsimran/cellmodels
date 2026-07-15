@@ -20,7 +20,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from cellmodels.confluency import MSCConfluency
+from cellmodels.confluency import MSCConfluency, _CALIBRATED_DEFAULTS
 from scripts.train_unet import load_pairs, MSCDataset, build_model, BCEDiceLoss, compute_dice_coefficient
 
 app = FastAPI(title="cellmodels UI Server")
@@ -67,6 +67,11 @@ class TrainingState:
             self.logs.append(msg)
             if success:
                 self.progress = 1.0
+
+    def stop_training(self):
+        with self.lock:
+            self.stop_requested = True
+
 
 # Global training state
 training_state = TrainingState()
@@ -373,6 +378,40 @@ async def api_train_stop():
         
     training_state.stop_training()
     return {"status": "stopping"}
+
+@app.get("/api/parameters/{magnification}")
+async def api_get_parameters(magnification: str):
+    """Retrieve optimal/calibrated parameters for a given magnification.
+    
+    If the calibration file does not exist, returns fallback default values.
+    """
+    weights_dir = Path(__file__).parent.parent / "weights"
+    config_path = weights_dir / f"{magnification}.json"
+    
+    if config_path.exists():
+        try:
+            with open(config_path, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass  # Fall through to default options on parse failure
+            
+    # Try calibration defaults for this magnification
+    if magnification in _CALIBRATED_DEFAULTS:
+        t_factor, c_radius, min_size = _CALIBRATED_DEFAULTS[magnification]
+        return {
+            "method": "otsu_scaled",
+            "t_factor": t_factor,
+            "closing_radius": c_radius,
+            "min_object_size": min_size
+        }
+        
+    # Generic fallback parameters if nothing is available
+    return {
+        "method": "otsu_scaled",
+        "t_factor": 1.0,
+        "closing_radius": 3,
+        "min_object_size": 50
+    }
 
 # Serve Frontend SPA
 @app.get("/")
