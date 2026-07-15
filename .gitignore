@@ -11,12 +11,14 @@ myenv/
 .venv/
 venv/
 .ruff_cache/
+.pytest_cache/
 
 # IDE
 .vscode/
 .idea/
-output/predictions_10x/
 
+# Output artifacts (training, calibration, predictions, web temp)
+output/
 
 # Dataset (large files, managed separately)
 counting-cells-dataset/

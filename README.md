@@ -30,13 +30,19 @@ For a deep dive into the network architecture, preprocessing, and segmentation p
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/cellmodels.git
+git clone <repository-url>
 cd cellmodels
 
-# Install the package in editable/development mode
+# Install the core package in editable/development mode
 pip install -e .
 
-# Install development dependencies (linting, formatting, and plotting)
+# Install CLI script dependencies (matplotlib, tqdm)
+pip install -e ".[cli]"
+
+# Install web UI dependencies (FastAPI, uvicorn, Pillow)
+pip install -e ".[web]"
+
+# Install development tools (linting, formatting, testing)
 pip install -e ".[dev]"
 
 # (Optional) Install transfer-learning dependencies (e.g., SMP encoders)
@@ -167,15 +173,24 @@ cellmodels/
 │   ├── base_model.py        # Base class for pre-processing & tiled inference
 │   ├── confluency.py        # MSCConfluency wrapper & segmentation
 │   ├── losses.py            # Custom BCE-Dice training loss
-│   └── weights/             # Shipped checkpoints and configs
-│       ├── 10x.pt           # 10x objective model checkpoint
-│       └── 10x.json         # Calibrated post-processing parameters
+│   ├── weights/             # Shipped checkpoints and configs
+│   │   ├── 10x.pt           # 10x objective model checkpoint
+│   │   └── 10x.json         # Calibrated post-processing parameters
+│   └── web/                 # Interactive web UI
+│       ├── server.py        # FastAPI backend
+│       └── static/          # Frontend HTML/JS/CSS assets
+│           ├── index.html
+│           ├── app.js
+│           └── styles.css
 ├── scripts/                 # CLI pipelines
 │   ├── split_dataset.py     # Leakage-free dataset splitting
 │   ├── train_unet.py        # Model training loop
 │   ├── calibrate.py         # Post-processing calibration grid search
 │   ├── predict.py           # Production inference runner
-│   └── evaluate.py          # Validation-qualified holdout evaluation
+│   ├── evaluate.py          # Validation-qualified holdout evaluation
+│   └── ui.py                # Web UI server launcher
+├── tests/                   # Test suite
+│   └── test_web_api.py      # Web API endpoint tests
 ├── .docs/                   # Extended project documentation
 │   ├── README.md            # Documentation index
 │   ├── architecture.md      # Architecture and mathematics deep dive

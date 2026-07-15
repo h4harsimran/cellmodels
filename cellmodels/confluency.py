@@ -15,6 +15,7 @@ Usage::
 
 import inspect
 import json
+import warnings
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -28,7 +29,7 @@ from cellmodels.base_model import Base
 # These were determined via grid search on held-out calibration sets.
 # Each entry maps magnification → (threshold_factor, closing_radius, min_object_size)
 _CALIBRATED_DEFAULTS: Dict[str, Tuple[float, int, int]] = {
-    "10x": (0.8, 1, 200),
+    "10x": (1.0, 3, 200),
     # Future magnifications will be added here as models are trained:
     # "4x":  (t_factor, radius, min_size),
     # "20x": (t_factor, radius, min_size),
@@ -114,8 +115,12 @@ class MSCConfluency(Base):
                     self.default_prob_threshold = config.get("prob_threshold", 0.50)
                 else:
                     self.default_threshold_factor = config.get("t_factor", 1.0)
-            except Exception:
+            except Exception as e:
                 # Fallback to hardcoded defaults on parsing error
+                warnings.warn(
+                    f"Failed to parse config {config_path}, "
+                    f"using hardcoded defaults: {e}"
+                )
                 self.method = "otsu_scaled"
                 t_factor, c_radius, min_size = _CALIBRATED_DEFAULTS.get(
                     magnification, (1.0, 3, 50)
@@ -256,11 +261,7 @@ class MSCConfluency(Base):
             t = getattr(self, "default_prob_threshold", 0.50)
             cell_mask = density_map > t
         else:
-            factor = (
-                threshold_factor
-                if threshold_factor is not None
-                else getattr(self, "default_threshold_factor", 1.0)
-            )
+            factor = getattr(self, "default_threshold_factor", 1.0)
             t = threshold_otsu(density_map) * factor
             cell_mask = density_map > t
 

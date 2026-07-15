@@ -1,5 +1,0 @@
-matplotlib
-tqdm
-mypy
-ruff
-black
