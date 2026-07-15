@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cellmodels — Mesenchymal Stem Cell Confluency Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <!-- Chart.js for Training Telemetry -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-logo">C</div>
+                <div class="brand-name">cellmodels</div>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-item active" id="tab-predict-btn" onclick="switchTab('predict')">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                    Prediction Sandbox
+                </button>
+                <button class="nav-item" id="tab-train-btn" onclick="switchTab('train')">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+                    Model Trainer
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                v0.1.0 • Running on CPU/GPU
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- PREDICTION SANDBOX -->
+            <section id="tab-predict" class="tab-content active">
+                <div class="header">
+                    <h1>Prediction Sandbox</h1>
+                    <p class="subtitle">Estimate mesenchymal stem cell confluency interactively with custom or calibrated weights.</p>
+                </div>
+
+                <div class="grid-layout">
+                    <!-- Controls Panel (Left) -->
+                    <div class="panel glass-card">
+                        <h2>Configurations</h2>
+                        
+                        <div class="control-group">
+                            <label class="control-label">1. Micrograph Image</label>
+                            <div class="dropzone" id="dropzone" onclick="document.getElementById('image-upload').click()">
+                                <svg class="dropzone-icon" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                                <span class="dropzone-text" id="dropzone-label">Drag & drop micrograph, or click to browse</span>
+                                <input type="file" id="image-upload" accept="image/*" style="display: none" onchange="handleImageSelect(event)">
+                            </div>
+                            <div id="image-preview-container" class="image-preview-container" style="display: none">
+                                <img id="image-preview" src="" alt="Micrograph Preview">
+                                <button class="btn btn-secondary btn-sm" onclick="clearSelectedImage(event)">Remove Image</button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="mag-select">2. Model Magnification</label>
+                            <select id="mag-select" class="form-control" onchange="toggleCheckpointUpload()">
+                                <option value="10x">10x Magnification (Calibrated Default)</option>
+                                <option value="custom">Custom Checkpoint (.pt file)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group" id="checkpoint-upload-group" style="display: none">
+                            <label class="control-label" for="checkpoint-upload">Custom Model Checkpoint (.pt)</label>
+                            <input type="file" id="checkpoint-upload" accept=".pt" class="form-control">
+                        </div>
+
+                        <div class="control-group">
+                            <div class="section-title">3. Calibrated Segmentation Sliders</div>
+                            
+                            <!-- Threshold Method Selection -->
+                            <div class="method-toggle-container">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="use-absolute-threshold" onchange="toggleThresholdMethod()">
+                                    <span class="checkmark"></span>
+                                    Use Absolute Probability Threshold
+                                </label>
+                            </div>
+
+                            <!-- Otsu Factor Slider -->
+                            <div class="slider-container" id="otsu-container">
+                                <div class="slider-header">
+                                    <span>Otsu Threshold Factor</span>
+                                    <span class="slider-value" id="otsu-factor-val">1.0</span>
+                                </div>
+                                <input type="range" id="otsu-factor" min="0.1" max="2.5" step="0.05" value="1.0" class="slider" oninput="updateSliderValue('otsu-factor')">
+                                <div class="slider-hint">Calibrated default: 0.8 for 10x magnification.</div>
+                            </div>
+
+                            <!-- Absolute Threshold Slider -->
+                            <div class="slider-container" id="absolute-container" style="display: none">
+                                <div class="slider-header">
+                                    <span>Prob Threshold</span>
+                                    <span class="slider-value" id="prob-threshold-val">0.50</span>
+                                </div>
+                                <input type="range" id="prob-threshold" min="0.01" max="0.99" step="0.01" value="0.50" class="slider" oninput="updateSliderValue('prob-threshold')">
+                                <div class="slider-hint">Pixels with confidence above this value are marked as cell body.</div>
+                            </div>
+
+                            <!-- Closing Radius Slider -->
+                            <div class="slider-container">
+                                <div class="slider-header">
+                                    <span>Morphological Closing Radius</span>
+                                    <span class="slider-value" id="closing-radius-val">3</span>
+                                </div>
+                                <input type="range" id="closing-radius" min="0" max="10" step="1" value="3" class="slider" oninput="updateSliderValue('closing-radius')">
+                                <div class="slider-hint">Fills small holes inside the cell body. Calibrated default: 1.</div>
+                            </div>
+
+                            <!-- Min Object Size Slider -->
+                            <div class="slider-container">
+                                <div class="slider-header">
+                                    <span>Min Object Size (px)</span>
+                                    <span class="slider-value" id="min-object-size-val">50</span>
+                                </div>
+                                <input type="range" id="min-object-size" min="0" max="1000" step="10" value="50" class="slider" oninput="updateSliderValue('min-object-size')">
+                                <div class="slider-hint">Removes segmented noise smaller than this. Calibrated default: 200.</div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary w-full" id="run-prediction-btn" onclick="submitPrediction()">
+                            Analyze Micrograph
+                        </button>
+                    </div>
+
+                    <!-- Visualisation & Results (Right) -->
+                    <div class="panel glass-card result-panel">
+                        <div class="result-header">
+                            <h2>Analysis Output</h2>
+                            <div class="confluency-display" id="confluency-display">
+                                <span class="confluency-label">Confluency</span>
+                                <span class="confluency-value" id="confluency-pct-val">—</span>
+                            </div>
+                        </div>
+
+                        <div class="output-tabs">
+                            <button class="output-tab active" onclick="switchOutputTab('tab-overlay')">Visual Overlay</button>
+                            <button class="output-tab" onclick="switchOutputTab('tab-heatmap')">U-Net Heatmap</button>
+                        </div>
+
+                        <div class="output-visuals">
+                            <!-- Overlay Canvas view -->
+                            <div id="tab-overlay" class="visual-content active">
+                                <div class="canvas-wrapper">
+                                    <div class="placeholder-msg" id="overlay-placeholder">
+                                        Upload and analyze an image to view predictions
+                                    </div>
+                                    <div id="overlay-container" style="display: none; position: relative;">
+                                        <!-- Interactive layers -->
+                                        <canvas id="base-canvas"></canvas>
+                                        <canvas id="overlay-canvas" style="position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0.65;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="canvas-controls" id="overlay-controls" style="display: none">
+                                    <label>Overlay Opacity</label>
+                                    <input type="range" id="overlay-opacity" min="0.0" max="1.0" step="0.05" value="0.65" oninput="adjustOverlayOpacity()">
+                                    <button class="btn btn-secondary btn-sm" onclick="toggleOverlayLayer()">Toggle Mask</button>
+                                </div>
+                            </div>
+
+                            <!-- Heatmap raw image view -->
+                            <div id="tab-heatmap" class="visual-content">
+                                <div class="canvas-wrapper">
+                                    <div class="placeholder-msg" id="heatmap-placeholder">
+                                        Upload and analyze an image to view probability map
+                                    </div>
+                                    <img id="heatmap-img" src="" alt="U-Net Heatmap Map" style="display: none; max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.4)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MODEL TRAINER -->
+            <section id="tab-train" class="tab-content">
+                <div class="header">
+                    <h1>Model Trainer</h1>
+                    <p class="subtitle">Run U-Net training pipeline interactively and monitor telemetry in real-time.</p>
+                </div>
+
+                <div class="grid-layout">
+                    <!-- Config Panel (Left) -->
+                    <div class="panel glass-card">
+                        <h2>Training Parameters</h2>
+                        
+                        <div class="control-group">
+                            <label class="control-label" for="train-dir-input">Train Dataset Directory</label>
+                            <input type="text" id="train-dir-input" class="form-control" placeholder="e.g. dataset/train" value="dataset/train">
+                            <div class="slider-hint">Must contain 'images' and 'masks' subdirectories.</div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="val-dir-input">Validation Dataset Directory</label>
+                            <input type="text" id="val-dir-input" class="form-control" placeholder="e.g. dataset/val" value="dataset/val">
+                            <div class="slider-hint">Used to evaluate checkpoints at each epoch.</div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="output-dir-input">Output Target Directory</label>
+                            <input type="text" id="output-dir-input" class="form-control" placeholder="e.g. output/web_training" value="output/web_training">
+                            <div class="slider-hint">Checkpoint model weights will be saved here.</div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="control-group w-half">
+                                <label class="control-label" for="train-epochs">Epochs</label>
+                                <input type="number" id="train-epochs" class="form-control" value="10" min="1" max="1000">
+                            </div>
+                            <div class="control-group w-half">
+                                <label class="control-label" for="train-batch-size">Batch Size</label>
+                                <input type="number" id="train-batch-size" class="form-control" value="8" min="1" max="128">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="control-group w-half">
+                                <label class="control-label" for="train-lr">Learning Rate</label>
+                                <input type="number" id="train-lr" class="form-control" value="0.0001" step="0.00001" min="0.000001" max="0.1">
+                            </div>
+                            <div class="control-group w-half">
+                                <label class="control-label" for="train-seed">Random Seed</label>
+                                <input type="number" id="train-seed" class="form-control" value="42">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="train-backbone">Encoder Backbone</label>
+                            <select id="train-backbone" class="form-control">
+                                <option value="scratch">Scratch U-Net (Lightweight, 16 features)</option>
+                                <option value="vgg16">VGG16 Backbone (Transfer Learning)</option>
+                                <option value="resnet34">ResNet34 Backbone (Transfer Learning)</option>
+                            </select>
+                        </div>
+
+                        <div class="action-buttons-row">
+                            <button class="btn btn-primary" id="start-train-btn" onclick="startTraining()">
+                                Start Training Run
+                            </button>
+                            <button class="btn btn-danger" id="stop-train-btn" onclick="stopTraining()" style="display: none">
+                                Abort Run
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Telemetry Panel (Right) -->
+                    <div class="panel glass-card telemetry-panel">
+                        <h2>Training Progress</h2>
+                        
+                        <div class="telemetry-summary">
+                            <div class="progress-ring-wrapper">
+                                <div class="progress-state-text" id="train-status-label">IDLE</div>
+                                <div class="progress-percentage-text" id="train-progress-pct">0%</div>
+                                <div class="progress-epoch-text" id="train-epoch-label">Epoch — / —</div>
+                            </div>
+                            
+                            <div class="metrics-grid">
+                                <div class="metric-box">
+                                    <span class="metric-label">Train Loss</span>
+                                    <span class="metric-val" id="metric-train-loss">—</span>
+                                </div>
+                                <div class="metric-box">
+                                    <span class="metric-label">Val Loss</span>
+                                    <span class="metric-val" id="metric-val-loss">—</span>
+                                </div>
+                                <div class="metric-box">
+                                    <span class="metric-label">Val Dice (IoU)</span>
+                                    <span class="metric-val" id="metric-val-dice">—</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chart-wrapper">
+                            <canvas id="loss-chart"></canvas>
+                        </div>
+
+                        <div class="console-logs-container">
+                            <div class="console-header">Run Logs</div>
+                            <pre class="console-logs" id="console-logs">Console logs will appear here during training runs...</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
