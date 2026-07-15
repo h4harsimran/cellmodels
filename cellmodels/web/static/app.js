@@ -109,7 +109,7 @@ function handleImageFile(file) {
             ctx.drawImage(img, 0, 0);
             
             // Show canvas container, hide placeholder
-            document.getElementById('overlay-container').style.display = 'block';
+            document.getElementById('overlay-container').style.display = 'grid';
             document.getElementById('overlay-placeholder').style.display = 'none';
         };
         img.src = e.target.result;
