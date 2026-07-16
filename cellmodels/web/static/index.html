@@ -28,6 +28,14 @@
                     <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
                     Model Trainer
                 </button>
+                <button class="nav-item" id="tab-calibrate-btn" onclick="switchTab('calibrate')">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+                    Post-Processing Calibrator
+                </button>
+                <button class="nav-item" id="tab-evaluate-btn" onclick="switchTab('evaluate')">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2zm0 8H7v-2h10v2z"/></svg>
+                    Holdout Evaluator
+                </button>
             </nav>
             <div class="sidebar-footer">
                 v0.1.0 • Running on CPU/GPU
@@ -292,13 +300,262 @@
                             </div>
                         </div>
 
-                        <div class="chart-wrapper">
-                            <canvas id="loss-chart"></canvas>
+                        <div class="charts-container">
+                            <div class="chart-box">
+                                <canvas id="loss-chart"></canvas>
+                            </div>
+                            <div class="chart-box">
+                                <canvas id="dice-chart"></canvas>
+                            </div>
                         </div>
 
                         <div class="console-logs-container">
                             <div class="console-header">Run Logs</div>
                             <pre class="console-logs" id="console-logs">Console logs will appear here during training runs...</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- POST-PROCESSING CALIBRATOR -->
+            <section id="tab-calibrate" class="tab-content">
+                <div class="header">
+                    <h1>Post-Processing Calibrator</h1>
+                    <p class="subtitle">Optimize post-processing thresholds, closing filters, and size criteria via grid search on a validation set.</p>
+                </div>
+
+                <div class="grid-layout">
+                    <!-- Controls Panel (Left) -->
+                    <div class="panel glass-card">
+                        <h2>Calibration Parameters</h2>
+
+                        <div class="control-group">
+                            <label class="control-label" for="cal-val-dir">Validation Dataset Directory</label>
+                            <input type="text" id="cal-val-dir" class="form-control" value="dataset/val" placeholder="e.g., dataset/val">
+                            <div class="slider-hint">Directory containing 'images' and 'masks' subdirectories.</div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="cal-checkpoint">Model Checkpoint Path</label>
+                            <input type="text" id="cal-checkpoint" class="form-control" value="output/training/best_msc_unet.pt" placeholder="e.g., output/training/best_msc_unet.pt">
+                            <div class="slider-hint">Path to the trained U-Net checkpoint (.pt file).</div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="cal-backbone">Encoder Backbone</label>
+                            <select id="cal-backbone" class="form-control">
+                                <option value="scratch" selected>scratch (U-Net from scratch)</option>
+                                <option value="vgg16">vgg16 (Transfer Learning)</option>
+                                <option value="resnet34">resnet34 (Transfer Learning)</option>
+                            </select>
+                            <div class="slider-hint">Encoder architecture matching the selected checkpoint.</div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="control-group w-half">
+                                <label class="control-label" for="cal-bias-weight">Bias Penalty</label>
+                                <input type="number" id="cal-bias-weight" class="form-control" value="0.01" step="0.005" min="0">
+                            </div>
+                            <div class="control-group w-half">
+                                <label class="control-label" for="cal-size">Subset Size</label>
+                                <input type="number" id="cal-size" class="form-control" value="15" step="1" min="-1">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="cal-output-dir">Calibration Output Directory</label>
+                            <input type="text" id="cal-output-dir" class="form-control" value="output/calibration" placeholder="e.g., output/calibration">
+                        </div>
+
+                        <div class="action-buttons-row">
+                            <button class="btn btn-primary" id="start-cal-btn" onclick="startCalibration()">
+                                Start Calibration Run
+                            </button>
+                            <button class="btn btn-danger" id="stop-cal-btn" onclick="stopCalibration()" style="display: none">
+                                Abort Run
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Telemetry Panel (Right) -->
+                    <div class="panel glass-card telemetry-panel">
+                        <h2>Run Telemetry</h2>
+
+                        <div class="telemetry-summary">
+                            <div class="progress-ring-wrapper">
+                                <div class="progress-state-text" id="cal-status-label">IDLE</div>
+                                <div class="progress-percentage-text" id="cal-progress-pct">0%</div>
+                                <div class="progress-epoch-text">Grid Search</div>
+                            </div>
+
+                            <div class="metrics-grid cal-metrics-grid">
+                                <div class="metric-box">
+                                    <span class="metric-label">Best Method</span>
+                                    <span class="metric-val" id="cal-best-method">—</span>
+                                </div>
+                                <div class="metric-box">
+                                    <span class="metric-label">Threshold Param</span>
+                                    <span class="metric-val" id="cal-best-param">—</span>
+                                </div>
+                                <div class="metric-box">
+                                    <span class="metric-label">Closing Radius</span>
+                                    <span class="metric-val" id="cal-best-radius">—</span>
+                                </div>
+                                <div class="metric-box">
+                                    <span class="metric-label">Min Obj Size</span>
+                                    <span class="metric-val" id="cal-best-size">—</span>
+                                </div>
+                                <div class="metric-box metric-box-full">
+                                    <span class="metric-label">Mean Dice / Mean Bias</span>
+                                    <span class="metric-val" id="cal-best-score">—</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="console-logs-container">
+                            <div class="console-header">Run Logs</div>
+                            <pre class="console-logs" id="cal-logs">Console logs will appear here during calibration runs...</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HOLDOUT EVALUATOR -->
+            <section id="tab-evaluate" class="tab-content">
+                <div class="header">
+                    <h1>Holdout Evaluator</h1>
+                    <p class="subtitle">Evaluate calibrated model confluency estimations and pixel-wise segmentation accuracy on the holdout test set.</p>
+                </div>
+
+                <div class="grid-layout">
+                    <!-- Controls Panel (Left) -->
+                    <div class="panel glass-card">
+                        <h2>Evaluation Parameters</h2>
+
+                        <div class="control-group">
+                            <label class="control-label" for="eval-test-dir">Test Dataset Directory</label>
+                            <input type="text" id="eval-test-dir" class="form-control" value="dataset/test" placeholder="e.g., dataset/test">
+                            <div class="slider-hint">Directory containing 'images' and 'masks' subdirectories.</div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="eval-config">Optimal Config Path</label>
+                            <input type="text" id="eval-config" class="form-control" value="output/calibration/optimal_config.json" placeholder="e.g., output/calibration/optimal_config.json">
+                            <div class="slider-hint">Path to calibrated post-processing optimal_config.json.</div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="eval-checkpoint">Model Checkpoint Path</label>
+                            <input type="text" id="eval-checkpoint" class="form-control" value="output/training/best_msc_unet.pt" placeholder="e.g., output/training/best_msc_unet.pt">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="control-group w-half">
+                                <label class="control-label" for="eval-backbone">Encoder Backbone</label>
+                                <select id="eval-backbone" class="form-control">
+                                    <option value="scratch" selected>scratch</option>
+                                    <option value="vgg16">vgg16</option>
+                                    <option value="resnet34">resnet34</option>
+                                </select>
+                            </div>
+                            <div class="control-group w-half">
+                                <label class="control-label" for="eval-output-dir">Output Directory</label>
+                                <input type="text" id="eval-output-dir" class="form-control" value="output/evaluation" placeholder="e.g., output/evaluation">
+                            </div>
+                        </div>
+
+                        <div class="action-buttons-row">
+                            <button class="btn btn-primary" id="start-eval-btn" onclick="startEvaluation()">
+                                Run Holdout Evaluation
+                            </button>
+                            <button class="btn btn-danger" id="stop-eval-btn" onclick="stopEvaluation()" style="display: none">
+                                Abort Run
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Results Panel (Right) -->
+                    <div class="panel glass-card eval-result-panel">
+                        <h2>Evaluation Results</h2>
+
+                        <div class="telemetry-summary eval-telemetry-summary">
+                            <div class="progress-ring-wrapper">
+                                <div class="progress-state-text" id="eval-status-label">IDLE</div>
+                                <div class="progress-percentage-text" id="eval-progress-pct">0%</div>
+                                <div class="progress-epoch-text">Test Evaluation</div>
+                            </div>
+
+                            <div class="eval-metrics-section">
+                                <div class="eval-metrics-section-label">Segmentation Quality</div>
+                                <div class="eval-metrics-row">
+                                    <div class="metric-box">
+                                        <span class="metric-label">Mean Dice</span>
+                                        <span class="metric-val" id="eval-metric-dice">—</span>
+                                    </div>
+                                    <div class="metric-box">
+                                        <span class="metric-label">Mean IoU</span>
+                                        <span class="metric-val" id="eval-metric-iou">—</span>
+                                    </div>
+                                    <div class="metric-box">
+                                        <span class="metric-label">Precision</span>
+                                        <span class="metric-val" id="eval-metric-precision">—</span>
+                                    </div>
+                                    <div class="metric-box">
+                                        <span class="metric-label">Recall</span>
+                                        <span class="metric-val" id="eval-metric-recall">—</span>
+                                    </div>
+                                </div>
+                                <div class="eval-metrics-section-label">Confluency Accuracy</div>
+                                <div class="eval-metrics-row">
+                                    <div class="metric-box">
+                                        <span class="metric-label">MAE</span>
+                                        <span class="metric-val" id="eval-metric-mae">—</span>
+                                    </div>
+                                    <div class="metric-box">
+                                        <span class="metric-label">RMSE</span>
+                                        <span class="metric-val" id="eval-metric-rmse">—</span>
+                                    </div>
+                                    <div class="metric-box">
+                                        <span class="metric-label">Pearson r</span>
+                                        <span class="metric-val" id="eval-metric-pearson">—</span>
+                                    </div>
+                                    <div class="metric-box">
+                                        <span class="metric-label">R² Score</span>
+                                        <span class="metric-val" id="eval-metric-r2">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="console-logs-container">
+                            <div class="console-header">Run Logs</div>
+                            <pre class="console-logs" id="eval-logs">Console logs will appear here during evaluation runs...</pre>
+                        </div>
+
+                        <!-- Generated Plots — revealed on completion -->
+                        <div id="eval-plots-container" class="eval-plots-container" style="display: none;">
+                            <div class="plot-box">
+                                <h3>Predicted vs. GT Correlation</h3>
+                                <div class="eval-plot-wrapper" id="eval-plot-correlation-wrapper">
+                                    <img id="eval-plot-correlation" src="" alt="Correlation Plot" style="transform-origin: top left; position: absolute; top: 0; left: 0;">
+                                    <div class="zoom-controls" id="eval-corr-zoom-controls">
+                                        <button class="zoom-btn" onclick="evalCorrZoom.zoom(1, event)" title="Zoom In">+</button>
+                                        <button class="zoom-btn" onclick="evalCorrZoom.zoom(-1, event)" title="Zoom Out">−</button>
+                                        <button class="zoom-btn" onclick="evalCorrZoom.reset()" title="Reset Zoom">⟲</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="plot-box">
+                                <h3>Representative Segmentation Overlays</h3>
+                                <div class="eval-plot-wrapper" id="eval-plot-examples-wrapper">
+                                    <img id="eval-plot-examples" src="" alt="Segmentation Overlays" style="transform-origin: top left; position: absolute; top: 0; left: 0;">
+                                    <div class="zoom-controls" id="eval-examples-zoom-controls">
+                                        <button class="zoom-btn" onclick="evalExamplesZoom.zoom(1, event)" title="Zoom In">+</button>
+                                        <button class="zoom-btn" onclick="evalExamplesZoom.zoom(-1, event)" title="Zoom Out">−</button>
+                                        <button class="zoom-btn" onclick="evalExamplesZoom.reset()" title="Reset Zoom">⟲</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

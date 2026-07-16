@@ -83,6 +83,7 @@ body {
     letter-spacing: -0.5px;
     background: linear-gradient(120deg, #ffffff, #d1d5db);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -408,6 +409,7 @@ select.form-control {
 
 .slider {
     -webkit-appearance: none;
+    appearance: none;
     width: 100%;
     height: 6px;
     border-radius: 3px;
@@ -811,16 +813,32 @@ select.form-control {
     font-weight: 700;
 }
 
-.chart-wrapper {
-    flex-grow: 1;
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+}
+
+.chart-box {
+    position: relative;
+    width: 100%;
+    height: 220px;
     background-color: rgba(0, 0, 0, 0.2);
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
-    padding: 16px;
-    max-height: 240px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 12px;
+}
+
+.chart-box canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+@media (max-width: 900px) {
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
 }
 
 .console-logs-container {
@@ -862,4 +880,124 @@ select.form-control {
     .result-panel, .telemetry-panel {
         height: auto;
     }
+}
+
+/* Evaluation Plots Layout */
+.eval-plots-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+    width: 100%;
+}
+
+.plot-box {
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+}
+
+.plot-box h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+/* Zoomable plot image viewer — mirrors canvas-wrapper from prediction tab */
+.eval-plot-wrapper {
+    position: relative;
+    flex-grow: 1;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: grab;
+    min-height: 200px;
+}
+
+.eval-plot-wrapper:active {
+    cursor: grabbing;
+}
+
+.eval-plot-wrapper img {
+    /* Positioned absolutely; ZoomPan handles transform */
+    max-width: none;
+    height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+@media (max-width: 900px) {
+    .eval-plots-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === Calibrate / Evaluate Tab Additions === */
+
+/* Calibrate metrics — 2-column override */
+.cal-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* Full-width metric box spanning all columns */
+.metric-box-full {
+    grid-column: 1 / -1;
+}
+
+/* Evaluate right panel — allows content to grow beyond fixed height */
+.eval-result-panel {
+    height: auto;
+    min-height: 0;
+}
+
+/* Evaluate telemetry summary — top-aligned so ring sits beside tall metrics section */
+.eval-telemetry-summary {
+    align-items: flex-start;
+}
+
+/* Evaluate metrics section wrapper (replaces metrics-grid for eval) */
+.eval-metrics-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+/* Subtle accent label between metric groups */
+.eval-metrics-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--accent-color);
+    opacity: 0.7;
+    margin-top: 4px;
+}
+
+/* 4-column grid for each metric row */
+.eval-metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.eval-metrics-row .metric-box {
+    padding: 10px 8px;
+}
+
+.eval-metrics-row .metric-label {
+    font-size: 10px;
+}
+
+.eval-metrics-row .metric-val {
+    font-size: 16px;
 }

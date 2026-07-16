@@ -29,12 +29,104 @@ from scripts.train_unet import (
     compute_dice_coefficient,
 )
 
-app = FastAPI(title="cellmodels UI Server")
+import subprocess
+
+class ProcessState:
+    def __init__(self, prefix: str):
+        self.is_running = False
+        self.progress = 0.0
+        self.logs = [f"{prefix} initialized."]
+        self.lock = threading.Lock()
+        self.process = None
+        self.output_dir = None
+        self.prefix = prefix
+
+    def reset(self, output_dir: str):
+        with self.lock:
+            self.is_running = True
+            self.progress = 0.0
+            self.logs = [f"{self.prefix} started."]
+            self.process = None
+            self.output_dir = output_dir
+
+    def add_log(self, message: str):
+        with self.lock:
+            self.logs.append(message)
+            print(f"[{self.prefix}] {message}")
+
+    def set_finished(self, success: bool, msg: str):
+        with self.lock:
+            self.is_running = False
+            if success:
+                self.progress = 1.0
+            self.process = None
+            self.logs.append(msg)
+
+calibration_state = ProcessState("Calibration")
+evaluation_state = ProcessState("Evaluation")
+
+def run_subprocess_thread(state: ProcessState, cmd: list):
+    try:
+        env = os.environ.copy()
+        env["PYTHONUNBUFFERED"] = "1"
+        
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            env=env,
+            cwd=str(ROOT_DIR)
+        )
+        
+        with state.lock:
+            state.process = proc
+            
+        for line in iter(proc.stdout.readline, ""):
+            line_str = line.strip()
+            if line_str:
+                state.add_log(line_str)
+                if "Grid Search:" in line_str:
+                    try:
+                        parts = line_str.split("Grid Search:")[-1].strip().split("%")
+                        if len(parts) > 0:
+                            pct_val = parts[0].strip().split()[-1]
+                            pct_val = "".join(c for c in pct_val if c.isdigit() or c == '.')
+                            state.progress = float(pct_val) / 100.0
+                    except Exception:
+                        pass
+                elif "Test Evaluation:" in line_str:
+                    try:
+                        parts = line_str.split("Test Evaluation:")[-1].strip().split("%")
+                        if len(parts) > 0:
+                            pct_val = parts[0].strip().split()[-1]
+                            pct_val = "".join(c for c in pct_val if c.isdigit() or c == '.')
+                            state.progress = float(pct_val) / 100.0
+                    except Exception:
+                        pass
+                        
+        proc.wait()
+        if proc.returncode == 0:
+            state.set_finished(True, f"{state.prefix} completed successfully.")
+        else:
+            state.set_finished(False, f"{state.prefix} failed with exit code {proc.returncode}.")
+            
+    except Exception as e:
+        state.set_finished(False, f"Critical error running process: {str(e)}")
+
+# FastAPI application
+app = FastAPI(title="cellmodels", description="Mesenchymal Stem Cell Confluency Analyzer")
 
 # Serve static files
 STATIC_DIR = Path(__file__).parent / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# Mount output directory to serve evaluation plots
+OUTPUT_DIR = ROOT_DIR / "output"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/output", StaticFiles(directory=OUTPUT_DIR), name="output")
 
 # Cached model instances keyed by (magnification, checkpoint_path)
 _model_cache: Dict[Tuple[str, Optional[str]], MSCConfluency] = {}
@@ -466,6 +558,148 @@ async def api_get_parameters(magnification: str):
         "closing_radius": 3,
         "min_object_size": 50,
     }
+
+
+@app.post("/api/calibrate/start")
+async def api_calibrate_start(
+    val_dir: str = Form("dataset/val"),
+    checkpoint: str = Form("output/training/best_msc_unet.pt"),
+    encoder_backbone: str = Form("scratch"),
+    bias_weight: float = Form(0.01),
+    calibrate_size: int = Form(15),
+    output_dir: str = Form("output/calibration"),
+):
+    if calibration_state.is_running:
+        raise HTTPException(status_code=400, detail="Calibration is already running.")
+
+    if not os.path.exists(val_dir):
+        raise HTTPException(status_code=400, detail=f"Validation directory not found: {val_dir}")
+    if not os.path.exists(checkpoint):
+        raise HTTPException(status_code=400, detail=f"Model checkpoint not found: {checkpoint}")
+
+    calibration_state.reset(output_dir)
+
+    cmd = [
+        sys.executable,
+        "scripts/calibrate.py",
+        "--val-dir", val_dir,
+        "--checkpoint", checkpoint,
+        "--encoder-backbone", encoder_backbone,
+        "--bias-weight", str(bias_weight),
+        "--calibrate-size", str(calibrate_size),
+        "--output-dir", output_dir
+    ]
+
+    t = threading.Thread(
+        target=run_subprocess_thread,
+        args=(calibration_state, cmd),
+        daemon=True
+    )
+    t.start()
+    return {"status": "started"}
+
+
+@app.get("/api/calibrate/status")
+async def api_calibrate_status():
+    with calibration_state.lock:
+        config = None
+        if not calibration_state.is_running and calibration_state.output_dir:
+            config_path = os.path.join(calibration_state.output_dir, "optimal_config.json")
+            if os.path.exists(config_path):
+                try:
+                    with open(config_path, "r") as f:
+                        config = json.load(f)
+                except Exception:
+                    pass
+        return {
+            "is_running": calibration_state.is_running,
+            "progress": round(calibration_state.progress, 4),
+            "logs": calibration_state.logs,
+            "config": config
+        }
+
+
+@app.post("/api/calibrate/stop")
+async def api_calibrate_stop():
+    with calibration_state.lock:
+        if calibration_state.process:
+            calibration_state.process.terminate()
+            calibration_state.process = None
+            calibration_state.is_running = False
+            calibration_state.logs.append("Calibration stopped by user.")
+            return {"status": "stopped"}
+        return {"status": "not running"}
+
+
+@app.post("/api/evaluate/start")
+async def api_evaluate_start(
+    test_dir: str = Form("dataset/test"),
+    optimal_config: str = Form("output/calibration/optimal_config.json"),
+    checkpoint: str = Form("output/training/best_msc_unet.pt"),
+    encoder_backbone: str = Form("scratch"),
+    output_dir: str = Form("output/evaluation"),
+):
+    if evaluation_state.is_running:
+        raise HTTPException(status_code=400, detail="Evaluation is already running.")
+
+    if not os.path.exists(test_dir):
+        raise HTTPException(status_code=400, detail=f"Test directory not found: {test_dir}")
+    if not os.path.exists(optimal_config):
+        raise HTTPException(status_code=400, detail=f"Optimal config file not found: {optimal_config}")
+    if not os.path.exists(checkpoint):
+        raise HTTPException(status_code=400, detail=f"Model checkpoint not found: {checkpoint}")
+
+    evaluation_state.reset(output_dir)
+
+    cmd = [
+        sys.executable,
+        "scripts/evaluate.py",
+        "--test-dir", test_dir,
+        "--optimal-config", optimal_config,
+        "--checkpoint", checkpoint,
+        "--encoder-backbone", encoder_backbone,
+        "--output-dir", output_dir
+    ]
+
+    t = threading.Thread(
+        target=run_subprocess_thread,
+        args=(evaluation_state, cmd),
+        daemon=True
+    )
+    t.start()
+    return {"status": "started"}
+
+
+@app.get("/api/evaluate/status")
+async def api_evaluate_status():
+    with evaluation_state.lock:
+        results = None
+        if not evaluation_state.is_running and evaluation_state.output_dir:
+            summary_path = os.path.join(evaluation_state.output_dir, "test_summary_metrics.json")
+            if os.path.exists(summary_path):
+                try:
+                    with open(summary_path, "r") as f:
+                        results = json.load(f)
+                except Exception:
+                    pass
+        return {
+            "is_running": evaluation_state.is_running,
+            "progress": round(evaluation_state.progress, 4),
+            "logs": evaluation_state.logs,
+            "results": results
+        }
+
+
+@app.post("/api/evaluate/stop")
+async def api_evaluate_stop():
+    with evaluation_state.lock:
+        if evaluation_state.process:
+            evaluation_state.process.terminate()
+            evaluation_state.process = None
+            evaluation_state.is_running = False
+            evaluation_state.logs.append("Evaluation stopped by user.")
+            return {"status": "stopped"}
+        return {"status": "not running"}
 
 
 # Serve Frontend SPA

@@ -1,9 +1,9 @@
 {
     "method": "otsu_scaled",
     "closing_radius": 3,
-    "min_object_size": 200,
-    "calibration_score": 0.9076109506586194,
-    "calibration_mean_dice": 0.9081195506586194,
-    "calibration_mean_bias": 0.05086000000000001,
+    "min_object_size": 0,
+    "calibration_score": 0.9066720871322043,
+    "calibration_mean_dice": 0.9071954204655376,
+    "calibration_mean_bias": -0.05233333333333239,
     "t_factor": 1.0
 }
