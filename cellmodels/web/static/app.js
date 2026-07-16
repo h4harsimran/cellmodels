@@ -4,6 +4,219 @@ let apiResponseData = null; // Holds the last prediction response
 let overlayVisible = true;
 let trainingPollInterval = null;
 let telemetryChart = null;
+let overlayZoomPan = null;
+let heatmapZoomPan = null;
+
+// Zoom and Pan helper class for interactive visualization
+class ZoomPan {
+    constructor(wrapper, target) {
+        this.wrapper = wrapper;
+        this.target = target;
+        
+        this.scale = 1;
+        this.panX = 0;
+        this.panY = 0;
+        
+        this.isDragging = false;
+        this.startX = 0;
+        this.startY = 0;
+        
+        this.initEvents();
+    }
+    
+    initEvents() {
+        // Prevent default zoom/scroll on mouse wheel over the wrapper
+        this.wrapper.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            // Zoom direction: positive for scroll up, negative for scroll down
+            const direction = e.deltaY < 0 ? 1 : -1;
+            this.zoom(direction, e);
+        }, { passive: false });
+        
+        // Drag panning
+        this.wrapper.addEventListener('mousedown', (e) => {
+            // Drag only on target or wrapper, but ignore if clicking buttons
+            if (e.target.closest('.zoom-btn')) return;
+            if (e.button !== 0) return; // Left click only
+            
+            this.isDragging = true;
+            this.startX = e.clientX - this.panX;
+            this.startY = e.clientY - this.panY;
+            this.wrapper.style.cursor = 'grabbing';
+            e.preventDefault();
+        });
+        
+        window.addEventListener('mousemove', (e) => {
+            if (!this.isDragging) return;
+            this.panX = e.clientX - this.startX;
+            this.panY = e.clientY - this.startY;
+            this.applyTransform();
+        });
+        
+        window.addEventListener('mouseup', () => {
+            if (this.isDragging) {
+                this.isDragging = false;
+                this.wrapper.style.cursor = 'grab';
+            }
+        });
+        
+        // Touch support (pinch to zoom and drag)
+        let lastTouchDistance = 0;
+        this.wrapper.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.zoom-btn')) return;
+            if (e.touches.length === 1) {
+                this.isDragging = true;
+                this.startX = e.touches[0].clientX - this.panX;
+                this.startY = e.touches[0].clientY - this.panY;
+            } else if (e.touches.length === 2) {
+                this.isDragging = false;
+                lastTouchDistance = this.getTouchDistance(e);
+            }
+        });
+        
+        this.wrapper.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && this.isDragging) {
+                this.panX = e.touches[0].clientX - this.startX;
+                this.panY = e.touches[0].clientY - this.startY;
+                this.applyTransform();
+                e.preventDefault();
+            } else if (e.touches.length === 2) {
+                e.preventDefault();
+                const dist = this.getTouchDistance(e);
+                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                const factor = dist / lastTouchDistance;
+                const direction = factor > 1 ? 1 : -1;
+                if (Math.abs(factor - 1) > 0.01) {
+                    this.zoom(direction, { clientX: midX, clientY: midY });
+                    lastTouchDistance = dist;
+                }
+            }
+        }, { passive: false });
+        
+        this.wrapper.addEventListener('touchend', () => {
+            this.isDragging = false;
+        });
+    }
+    
+    getTouchDistance(e) {
+        return Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+    }
+    
+    zoom(direction, mouseXOrEvent, mouseY) {
+        const oldScale = this.scale;
+        const zoomStep = 1.15;
+        
+        if (direction > 0) {
+            this.scale = Math.min(this.scale * zoomStep, 8.0);
+        } else {
+            this.scale = Math.max(this.scale / zoomStep, 0.25);
+        }
+        
+        let clientX, clientY;
+        if (mouseXOrEvent instanceof MouseEvent || mouseXOrEvent instanceof TouchEvent || (mouseXOrEvent && mouseXOrEvent.clientX !== undefined)) {
+            if (mouseXOrEvent.target && mouseXOrEvent.target.closest('.zoom-btn')) {
+                clientX = undefined;
+                clientY = undefined;
+            } else {
+                clientX = mouseXOrEvent.clientX;
+                clientY = mouseXOrEvent.clientY;
+            }
+        } else {
+            clientX = mouseXOrEvent;
+            clientY = mouseY;
+        }
+        
+        if (clientX !== undefined && clientY !== undefined) {
+            const rect = this.wrapper.getBoundingClientRect();
+            const mx = clientX - rect.left;
+            const my = clientY - rect.top;
+            
+            const tx = (mx - this.panX) / oldScale;
+            const ty = (my - this.panY) / oldScale;
+            
+            this.panX = mx - tx * this.scale;
+            this.panY = my - ty * this.scale;
+        } else {
+            const rect = this.wrapper.getBoundingClientRect();
+            const mx = rect.width / 2;
+            const my = rect.height / 2;
+            
+            const tx = (mx - this.panX) / oldScale;
+            const ty = (my - this.panY) / oldScale;
+            
+            this.panX = mx - tx * this.scale;
+            this.panY = my - ty * this.scale;
+        }
+        
+        this.applyTransform();
+    }
+    
+    reset() {
+        const wRect = this.wrapper.getBoundingClientRect();
+        
+        let targetWidth = 0;
+        let targetHeight = 0;
+        
+        if (this.target.tagName === 'CANVAS') {
+            targetWidth = this.target.width;
+            targetHeight = this.target.height;
+        } else if (this.target.tagName === 'IMG') {
+            targetWidth = this.target.naturalWidth;
+            targetHeight = this.target.naturalHeight;
+        } else {
+            const canvas = this.target.querySelector('canvas');
+            if (canvas) {
+                targetWidth = canvas.width;
+                targetHeight = canvas.height;
+            } else {
+                const img = this.target.querySelector('img');
+                if (img) {
+                    targetWidth = img.naturalWidth;
+                    targetHeight = img.naturalHeight;
+                } else {
+                    targetWidth = this.target.offsetWidth;
+                    targetHeight = this.target.offsetHeight;
+                }
+            }
+        }
+        
+        if (!targetWidth || !targetHeight) {
+            this.scale = 1;
+            this.panX = 0;
+            this.panY = 0;
+            this.applyTransform();
+            return;
+        }
+        
+        const padding = 16;
+        const availWidth = Math.max(100, wRect.width - padding * 2);
+        const availHeight = Math.max(100, wRect.height - padding * 2);
+        
+        const scaleX = availWidth / targetWidth;
+        const scaleY = availHeight / targetHeight;
+        this.scale = Math.min(scaleX, scaleY);
+        
+        const scaledWidth = targetWidth * this.scale;
+        const scaledHeight = targetHeight * this.scale;
+        
+        this.panX = (wRect.width - scaledWidth) / 2;
+        this.panY = (wRect.height - scaledHeight) / 2;
+        
+        this.target.style.width = targetWidth + 'px';
+        this.target.style.height = targetHeight + 'px';
+        
+        this.applyTransform();
+        this.wrapper.style.cursor = 'grab';
+    }
+    
+    applyTransform() {
+        this.target.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.scale})`;
+    }
+}
 
 // Initial Setup
 document.addEventListener('DOMContentLoaded', () => {
@@ -32,11 +245,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, false);
 
+    // Initialize zoom pan instances
+    const overlayWrapper = document.getElementById('overlay-wrapper');
+    const overlayContainer = document.getElementById('overlay-container');
+    overlayZoomPan = new ZoomPan(overlayWrapper, overlayContainer);
+    
+    const heatmapWrapper = document.getElementById('heatmap-wrapper');
+    const heatmapContainer = document.getElementById('heatmap-container');
+    heatmapZoomPan = new ZoomPan(heatmapWrapper, heatmapContainer);
+
     // Initialize telemetry chart
     initChart();
 
     // Load initial calibrated parameters for default magnification
     handleMagnificationChange();
+});
+
+// Window Resize Handler to update zoom fit
+window.addEventListener('resize', () => {
+    if (overlayZoomPan && document.getElementById('overlay-container').style.display !== 'none') {
+        overlayZoomPan.reset();
+    }
+    if (heatmapZoomPan && document.getElementById('heatmap-container').style.display !== 'none') {
+        heatmapZoomPan.reset();
+    }
 });
 
 // Tab Switching
@@ -69,6 +301,13 @@ function switchOutputTab(tabId) {
             btn.classList.add('active');
         }
     });
+
+    // Reset zoom when switching tabs to ensure layouts are correctly sized
+    if (tabId === 'tab-overlay' && overlayZoomPan) {
+        setTimeout(() => overlayZoomPan.reset(), 50);
+    } else if (tabId === 'tab-heatmap' && heatmapZoomPan) {
+        setTimeout(() => heatmapZoomPan.reset(), 50);
+    }
 }
 
 // Image Selection Handling
@@ -111,6 +350,12 @@ function handleImageFile(file) {
             // Show canvas container, hide placeholder
             document.getElementById('overlay-container').style.display = 'grid';
             document.getElementById('overlay-placeholder').style.display = 'none';
+            document.getElementById('overlay-zoom-controls').style.display = 'flex';
+            
+            // Reset overlay zoom/pan
+            if (overlayZoomPan) {
+                setTimeout(() => overlayZoomPan.reset(), 50);
+            }
         };
         img.src = e.target.result;
     };
@@ -128,12 +373,15 @@ function clearSelectedImage(event) {
     document.getElementById('overlay-container').style.display = 'none';
     document.getElementById('overlay-placeholder').style.display = 'block';
     document.getElementById('overlay-controls').style.display = 'none';
+    document.getElementById('overlay-zoom-controls').style.display = 'none';
     document.getElementById('confluency-pct-val').innerText = '—';
     
     // Clear Heatmap tab
     document.getElementById('heatmap-placeholder').style.display = 'block';
+    document.getElementById('heatmap-zoom-controls').style.display = 'none';
+    const heatmapContainer = document.getElementById('heatmap-container');
+    heatmapContainer.style.display = 'none';
     const heatmapImg = document.getElementById('heatmap-img');
-    heatmapImg.style.display = 'none';
     heatmapImg.src = '';
 }
 
@@ -275,15 +523,28 @@ async function submitPrediction() {
         
         // Show Heatmap
         const heatmapImg = document.getElementById('heatmap-img');
+        const heatmapContainer = document.getElementById('heatmap-container');
         heatmapImg.src = apiResponseData.density_map;
-        heatmapImg.style.display = 'block';
+        
+        heatmapImg.onload = () => {
+            if (heatmapZoomPan) {
+                setTimeout(() => heatmapZoomPan.reset(), 50);
+            }
+        };
+        
+        heatmapContainer.style.display = 'block';
         document.getElementById('heatmap-placeholder').style.display = 'none';
+        document.getElementById('heatmap-zoom-controls').style.display = 'flex';
 
         // Redraw canvases with masks and borders
         overlayVisible = true;
         renderMaskOverlay();
         
         document.getElementById('overlay-controls').style.display = 'flex';
+        
+        if (overlayZoomPan) {
+            setTimeout(() => overlayZoomPan.reset(), 50);
+        }
         
     } catch (e) {
         alert(`Error: ${e.message}`);
